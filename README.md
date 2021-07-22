@@ -25,32 +25,22 @@ RUST_LOG="none" html2pdf path/to/file.html
 ## Options
 
 ```shell
-html2pdf 0.1.0
+html2pdf 0.2.0
+Generate a PDF from a local HTML file using a headless chrome
 
 USAGE:
     html2pdf [FLAGS] [OPTIONS] <input>
 
 FLAGS:
-        --background    
-            Allow print background
-
-    -h, --help          
-            Prints help information
-
-        --landscape     
-            Use landscape mode
-
-    -V, --version       
-            Prints version information
-
+        --background    Allow print background
+    -h, --help          Prints help information
+        --landscape     Use landscape mode
+    -V, --version       Prints version information
 
 OPTIONS:
-    -o, --output <output>    
-            Output file
-            
-            By default, just change the input extension to PDF
+    -o, --output <output>    Output file. By default, just change the input extension to PDF
+        --wait <wait>        Time to wait in ms before printing. Examples: 150ms, 10s
 
 ARGS:
-    <input>    
-            Input HTML file
+    <input>    Input HTML file
 ```

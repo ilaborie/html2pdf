@@ -1,26 +1,33 @@
 use std::path::PathBuf;
+use std::time::Duration;
 
+use humantime::parse_duration;
 use structopt::StructOpt;
 
+/// Generate a PDF from a local HTML file using a headless chrome
 #[derive(Debug, StructOpt)]
 pub struct CliOptions {
-    /// Input HTML file
+    /// Input HTML file.
     #[structopt()]
     input: PathBuf,
 
-    /// Output file
-    ///
+    /// Output file.
     /// By default, just change the input extension to PDF
     #[structopt(short, long)]
     output: Option<PathBuf>,
 
-    /// Use landscape mode
+    /// Use landscape mode.
     #[structopt(long)]
     landscape: bool,
 
-    /// Allow print background
+    /// Allow print background.
     #[structopt(long)]
     background: bool,
+
+    /// Time to wait in ms before printing.
+    /// Examples: 150ms, 10s
+    #[structopt(long, parse(try_from_str = parse_duration))]
+    wait: Option<Duration>,
     // TODO: allow to configure other PrintToPdfOptions options
     // display_header_footer: Option<bool>,
 
@@ -62,5 +69,10 @@ impl CliOptions {
     /// Get a reference to the cli options's background.
     pub fn background(&self) -> bool {
         self.background
+    }
+
+    /// Get a reference to the cli options's wait.
+    pub fn wait(&self) -> Option<Duration> {
+        self.wait
     }
 }
