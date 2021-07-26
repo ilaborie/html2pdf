@@ -1,6 +1,6 @@
 [package]
 name = "html2pdf"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2018"
 authors = ["Igor Laborie <igor@monkeypatch.io>"]
 description = "Convert HTML to PDF using a Headless Chrome browser"
@@ -18,5 +18,10 @@ structopt = "0.3"
 
 humantime = "2.1.0"
 
+thiserror = "1.0"
+
 log = "0.4"
 pretty_env_logger = "0.4"
+
+[dev-dependencies]
+test-case = "1.2"

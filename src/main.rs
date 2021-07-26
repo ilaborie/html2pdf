@@ -1,10 +1,10 @@
 use std::env;
 
-use html2pdf::{run, CliOptions};
+use html2pdf::{run, CliOptions, Error};
 use log::{debug, warn};
 use structopt::StructOpt;
 
-fn main() {
+fn main() -> Result<(), Error> {
     let env_log = env::var("RUST_LOG");
     if let Ok(level) = env_log {
         pretty_env_logger::init();
@@ -19,5 +19,5 @@ fn main() {
     debug!("CliOptions: {:#?}", opt);
 
     // Let's go
-    run(opt);
+    run(opt)
 }
