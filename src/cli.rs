@@ -249,7 +249,6 @@ impl FromStr for Margin {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let values: Vec<&str> = s.split(' ').filter(|s| !s.is_empty()).collect();
-        dbg!(&values);
         match values.len() {
             1 => {
                 let value = s.parse::<f32>().map_err(Error::InvalidMarginValue)?;
