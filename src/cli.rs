@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use std::str::FromStr;
 use std::time::Duration;
 
+use headless_chrome::protocol::page::PrintToPdfOptions;
 use humantime::parse_duration;
 use structopt::StructOpt;
 
@@ -50,17 +51,17 @@ pub struct CliOptions {
     #[structopt(long)]
     footer: Option<String>,
 
-    /// Paper size
+    /// Paper size.
     /// Supported values: A4, Letter, A3, Tabloid, A2, A1, A0, A5, A6
     #[structopt(long)]
     paper: Option<PaperSize>,
 
-    /// Scale
+    /// Scale, default to 1.0
     #[structopt(long)]
     scale: Option<f32>,
 
-    /// Paper ranges to print
-    /// e.g., '1-5, 8, 11-13'
+    /// Paper ranges to print,
+    /// e.g. '1-5, 8, 11-13'
     #[structopt(long)]
     range: Option<String>,
 
@@ -127,6 +128,28 @@ impl CliOptions {
     /// Get a reference to the cli options's range.
     pub fn range(&self) -> Option<&String> {
         self.range.as_ref()
+    }
+}
+
+impl From<&CliOptions> for PrintToPdfOptions {
+    fn from(opt: &CliOptions) -> Self {
+        PrintToPdfOptions {
+            landscape: Some(opt.landscape()),
+            display_header_footer: Some(opt.header().is_some() || opt.footer().is_some()),
+            print_background: Some(opt.background()),
+            scale: opt.scale(),
+            paper_width: opt.paper().map(|ps| ps.paper_width()),
+            paper_height: opt.paper().map(|ps| ps.paper_height()),
+            margin_top: opt.margin().map(|m| m.margin_top()),
+            margin_bottom: opt.margin().map(|m| m.margin_bottom()),
+            margin_left: opt.margin().map(|m| m.margin_left()),
+            margin_right: opt.margin().map(|m| m.margin_right()),
+            page_ranges: opt.range().cloned(),
+            ignore_invalid_page_ranges: None,
+            header_template: opt.header().cloned(),
+            footer_template: opt.footer().cloned(),
+            prefer_css_page_size: None,
+        }
     }
 }
 
