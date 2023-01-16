@@ -76,56 +76,67 @@ pub struct Options {
 
 impl Options {
     /// Get a reference to the cli options's input.
+    #[must_use]
     pub fn input(&self) -> &PathBuf {
         &self.input
     }
 
     /// Get a reference to the cli options's output.
+    #[must_use]
     pub fn output(&self) -> Option<&PathBuf> {
         self.output.as_ref()
     }
 
     /// Get a reference to the cli options's landscape.
+    #[must_use]
     pub fn landscape(&self) -> bool {
         self.landscape
     }
 
     /// Get a reference to the cli options's background.
+    #[must_use]
     pub fn background(&self) -> bool {
         self.background
     }
 
     /// Get a reference to the cli options's wait.
+    #[must_use]
     pub fn wait(&self) -> Option<Duration> {
         self.wait
     }
 
     /// Get a reference to the cli options's header.
+    #[must_use]
     pub fn header(&self) -> Option<&String> {
         self.header.as_ref()
     }
 
     /// Get a reference to the cli options's footer.
+    #[must_use]
     pub fn footer(&self) -> Option<&String> {
         self.footer.as_ref()
     }
 
     /// Get a reference to the cli options's paper.
+    #[must_use]
     pub fn paper(&self) -> Option<&PaperSize> {
         self.paper.as_ref()
     }
 
     /// Get a reference to the cli options's scale.
+    #[must_use]
     pub fn scale(&self) -> Option<f32> {
         self.scale
     }
 
     /// Get a reference to the cli options's margin.
+    #[must_use]
     pub fn margin(&self) -> Option<&Margin> {
         self.margin.as_ref()
     }
 
     /// Get a reference to the cli options's range.
+    #[must_use]
     pub fn range(&self) -> Option<&String> {
         self.range.as_ref()
     }
@@ -138,12 +149,12 @@ impl From<&Options> for PrintToPdfOptions {
             display_header_footer: Some(opt.header().is_some() || opt.footer().is_some()),
             print_background: Some(opt.background()),
             scale: opt.scale(),
-            paper_width: opt.paper().map(|ps| ps.paper_width()),
-            paper_height: opt.paper().map(|ps| ps.paper_height()),
-            margin_top: opt.margin().map(|m| m.margin_top()),
-            margin_bottom: opt.margin().map(|m| m.margin_bottom()),
-            margin_left: opt.margin().map(|m| m.margin_left()),
-            margin_right: opt.margin().map(|m| m.margin_right()),
+            paper_width: opt.paper().map(PaperSize::paper_width),
+            paper_height: opt.paper().map(PaperSize::paper_height),
+            margin_top: opt.margin().map(Margin::margin_top),
+            margin_bottom: opt.margin().map(Margin::margin_bottom),
+            margin_left: opt.margin().map(Margin::margin_left),
+            margin_right: opt.margin().map(Margin::margin_right),
             page_ranges: opt.range().cloned(),
             ignore_invalid_page_ranges: None,
             header_template: opt.header().cloned(),
@@ -153,6 +164,7 @@ impl From<&Options> for PrintToPdfOptions {
     }
 }
 
+/// Paper size
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PaperSize {
     /// A0 (84.1cm × 118.9cm)
@@ -178,6 +190,8 @@ pub enum PaperSize {
 }
 
 impl PaperSize {
+    /// The width
+    #[must_use]
     pub fn paper_width(&self) -> f32 {
         match self {
             PaperSize::A0 => 33.1,
@@ -187,12 +201,13 @@ impl PaperSize {
             PaperSize::A4 => 8.27,
             PaperSize::A5 => 5.83,
             PaperSize::A6 => 4.13,
-            PaperSize::Letter => 8.5,
-            PaperSize::Legal => 8.5,
+            PaperSize::Letter | PaperSize::Legal => 8.5,
             PaperSize::Tabloid => 11.0,
         }
     }
 
+    /// The height
+    #[must_use]
     pub fn paper_height(&self) -> f32 {
         match self {
             PaperSize::A0 => 46.8,
@@ -203,8 +218,7 @@ impl PaperSize {
             PaperSize::A5 => 8.27,
             PaperSize::A6 => 5.83,
             PaperSize::Letter => 11.0,
-            PaperSize::Legal => 17.0,
-            PaperSize::Tabloid => 17.0,
+            PaperSize::Legal | PaperSize::Tabloid => 17.0,
         }
     }
 }
@@ -229,40 +243,52 @@ impl FromStr for PaperSize {
     }
 }
 
+/// Margin definition
 #[derive(Debug, Clone, PartialEq)]
 pub enum Margin {
+    /// Same margin on all side
     All(f32),
+    /// Same margin vertically and horizontally
     VerticalHorizontal(f32, f32),
+    /// Custom margin for every side
     TopRightBottomLeft(f32, f32, f32, f32),
 }
 
 impl Margin {
+    /// Margin top
+    #[must_use]
     pub fn margin_top(&self) -> f32 {
         match self {
-            Margin::All(f) => *f,
-            Margin::VerticalHorizontal(f, _) => *f,
-            Margin::TopRightBottomLeft(f, _, _, _) => *f,
+            Margin::All(f)
+            | Margin::VerticalHorizontal(f, _)
+            | Margin::TopRightBottomLeft(f, _, _, _) => *f,
         }
     }
+    /// Margin right
+    #[must_use]
     pub fn margin_right(&self) -> f32 {
         match self {
-            Margin::All(f) => *f,
-            Margin::VerticalHorizontal(_, f) => *f,
-            Margin::TopRightBottomLeft(_, f, _, _) => *f,
+            Margin::All(f)
+            | Margin::VerticalHorizontal(_, f)
+            | Margin::TopRightBottomLeft(_, f, _, _) => *f,
         }
     }
+    /// Margin bottom
+    #[must_use]
     pub fn margin_bottom(&self) -> f32 {
         match self {
-            Margin::All(f) => *f,
-            Margin::VerticalHorizontal(f, _) => *f,
-            Margin::TopRightBottomLeft(_, _, f, _) => *f,
+            Margin::All(f)
+            | Margin::VerticalHorizontal(f, _)
+            | Margin::TopRightBottomLeft(_, _, f, _) => *f,
         }
     }
+    /// Margin left
+    #[must_use]
     pub fn margin_left(&self) -> f32 {
         match self {
-            Margin::All(f) => *f,
-            Margin::VerticalHorizontal(_, f) => *f,
-            Margin::TopRightBottomLeft(_, _, _, f) => *f,
+            Margin::All(f)
+            | Margin::VerticalHorizontal(_, f)
+            | Margin::TopRightBottomLeft(_, _, _, f) => *f,
         }
     }
 }

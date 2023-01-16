@@ -1,6 +1,6 @@
 use std::env;
 
-use html2pdf::{run, Options, Error};
+use html2pdf::{run, Error, Options};
 use log::{debug, warn};
 use structopt::StructOpt;
 
@@ -8,7 +8,7 @@ fn main() -> Result<(), Error> {
     let env_log = env::var("RUST_LOG");
     if let Ok(level) = env_log {
         pretty_env_logger::init();
-        debug!("RUST_LOG is {}", level);
+        debug!("RUST_LOG is {level}");
     } else {
         env::set_var("RUST_LOG", "info");
         pretty_env_logger::init();
@@ -16,8 +16,8 @@ fn main() -> Result<(), Error> {
     }
 
     let opt = Options::from_args();
-    debug!("Options: {:#?}", opt);
+    debug!("Options: {opt:#?}");
 
     // Let's go
-    run(opt)
+    run(&opt)
 }

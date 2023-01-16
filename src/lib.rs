@@ -1,3 +1,9 @@
+#![forbid(unsafe_code)]
+#![warn(clippy::perf)]
+// #![warn(clippy::nursery)]
+#![warn(clippy::pedantic)]
+#![warn(missing_docs)]
+#![allow(clippy::module_name_repetitions)]
 #![doc = include_str!("../README.md")]
 
 use std::fmt::Debug;
@@ -18,26 +24,30 @@ mod cli;
 
 pub use cli::*;
 
+/// The html2pdf Error
 #[derive(Error, Debug)]
 pub enum Error {
+    /// Invalid paper size
     #[error(
         "Invalid paper size {0}, expected a value in A4, Letter, A3, Tabloid, A2, A1, A0, A5, A6"
     )]
     InvalidPaperSize(String),
+    /// Invalid margin definition
     #[error("Invalid margin definition, expected 1, 2, or 4 value, got {0}")]
     InvalidMarginDefinition(String),
+    /// Invalid margin value
     #[error("Invalid margin value: {0}")]
     InvalidMarginValue(ParseFloatError),
+    /// Headless chrome issue
     #[error("Oops, an error occurs with headless chrome: {0}")]
     HeadlessChromeError(String),
+    /// I/O issue
     #[error("Oops, an error occurs with IO")]
-    IoError { source: io::Error },
-}
-
-impl From<io::Error> for Error {
-    fn from(source: io::Error) -> Self {
-        Error::IoError { source }
-    }
+    IoError {
+        /// The source error
+        #[from]
+        source: io::Error,
+    },
 }
 
 impl From<ParseFloatError> for Error {
@@ -52,26 +62,34 @@ impl From<failure::Error> for Error {
     }
 }
 
-/// Run HTML to PDF with headless_chrome
-pub fn run(opt: Options) -> Result<(), Error> {
+/// Run HTML to PDF with `headless_chrome`
+///
+/// # Errors
+///
+/// Could fail if there is I/O or Chrome headless issue
+pub fn run(opt: &Options) -> Result<(), Error> {
     let input = dunce::canonicalize(opt.input())?;
-    let output = if let Some(out) = opt.output() {
-        out.clone()
+    let output = if let Some(path) = opt.output() {
+        path.clone()
     } else {
-        let mut out = opt.input().clone();
-        out.set_extension("pdf");
-        out
+        let mut path = opt.input().clone();
+        path.set_extension("pdf");
+        path
     };
 
-    html_to_pdf(input, output, (&opt).into(), opt.wait())?;
+    html_to_pdf(input, output, opt.into(), opt.wait())?;
 
     Ok(())
 }
 
-/// Run HTML to PDF with headless_chrome
+/// Run HTML to PDF with `headless_chrome`
 ///
 /// # Panics
 /// Sorry, no error handling, just panic
+///
+/// # Errors
+///
+/// Could fail if there is I/O or Chrome headless issue
 pub fn html_to_pdf<I, O>(
     input: I,
     output: O,
@@ -87,13 +105,13 @@ where
         .as_os_str()
         .to_str()
         .ok_or_else(|| io::Error::from(ErrorKind::InvalidInput))?;
-    let input = format!("file://{}", os);
-    info!("Input file: {}", input);
+    let input = format!("file://{os}");
+    info!("Input file: {input}");
 
     let local_pdf = print_to_pdf(&input, pdf_options, wait)?;
 
     info!("Output file: {:?}", output.as_ref());
-    fs::write(output.as_ref(), &local_pdf)?;
+    fs::write(output.as_ref(), local_pdf)?;
 
     Ok(())
 }
