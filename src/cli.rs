@@ -1,37 +1,35 @@
-use core::f32;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::time::Duration;
 
-use headless_chrome::protocol::page::PrintToPdfOptions;
+use clap::Parser;
+use headless_chrome::types::PrintToPdfOptions;
 use humantime::parse_duration;
-use structopt::StructOpt;
 
 use crate::Error;
 
 /// Generate a PDF from a local HTML file using a headless chrome
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct Options {
     /// Input HTML file.
-    #[structopt()]
     pub input: PathBuf,
 
     /// Output file.
     /// By default, just change the input extension to PDF
-    #[structopt(short, long)]
+    #[clap(short, long)]
     pub output: Option<PathBuf>,
 
     /// Use landscape mode.
-    #[structopt(long)]
+    #[clap(long)]
     pub landscape: bool,
 
     /// Allow print background.
-    #[structopt(long)]
+    #[clap(long)]
     pub background: bool,
 
     /// Time to wait in ms before printing.
     /// Examples: 150ms, 10s
-    #[structopt(long, parse(try_from_str = parse_duration))]
+    #[clap(long, value_parser = parse_duration)]
     pub wait: Option<Duration>,
 
     /// HTML template for the print header.
@@ -43,26 +41,26 @@ pub struct Options {
     /// pageNumber for current page number,
     /// totalPages for total pages in the document.
     /// For example, `<span class=title></span>` would generate span containing the title.
-    #[structopt(long)]
+    #[clap(long)]
     pub header: Option<String>,
 
     /// HTML template for the print footer.
     /// Should use the same format as the headerTemplate.
-    #[structopt(long)]
+    #[clap(long)]
     pub footer: Option<String>,
 
     /// Paper size.
     /// Supported values: A4, Letter, A3, Tabloid, A2, A1, A0, A5, A6
-    #[structopt(long)]
+    #[clap(long)]
     pub paper: Option<PaperSize>,
 
     /// Scale, default to 1.0
-    #[structopt(long)]
-    pub scale: Option<f32>,
+    #[clap(long)]
+    pub scale: Option<f64>,
 
     /// Paper ranges to print,
     /// e.g. '1-5, 8, 11-13'
-    #[structopt(long)]
+    #[clap(long)]
     pub range: Option<String>,
 
     /// Margin in inches
@@ -70,7 +68,7 @@ pub struct Options {
     /// '0.4' the value is applied for all side,
     /// '0.4 0.4' : first value is applied for top and bottom, second for left and right,
     /// '0.4 0.4 0.4 0.4' : first value is applied for top then, right, then bottom, and last for left
-    #[structopt(long)]
+    #[clap(long)]
     pub margin: Option<Margin>,
 }
 
@@ -125,7 +123,7 @@ impl Options {
 
     /// Get a reference to the cli options's scale.
     #[must_use]
-    pub fn scale(&self) -> Option<f32> {
+    pub fn scale(&self) -> Option<f64> {
         self.scale
     }
 
@@ -160,6 +158,7 @@ impl From<&Options> for PrintToPdfOptions {
             header_template: opt.header().cloned(),
             footer_template: opt.footer().cloned(),
             prefer_css_page_size: None,
+            transfer_mode: None,
         }
     }
 }
@@ -192,7 +191,7 @@ pub enum PaperSize {
 impl PaperSize {
     /// The width
     #[must_use]
-    pub fn paper_width(&self) -> f32 {
+    pub fn paper_width(&self) -> f64 {
         match self {
             PaperSize::A0 => 33.1,
             PaperSize::A1 => 23.4,
@@ -208,7 +207,7 @@ impl PaperSize {
 
     /// The height
     #[must_use]
-    pub fn paper_height(&self) -> f32 {
+    pub fn paper_height(&self) -> f64 {
         match self {
             PaperSize::A0 => 46.8,
             PaperSize::A1 => 33.1,
@@ -247,17 +246,17 @@ impl FromStr for PaperSize {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Margin {
     /// Same margin on all side
-    All(f32),
+    All(f64),
     /// Same margin vertically and horizontally
-    VerticalHorizontal(f32, f32),
+    VerticalHorizontal(f64, f64),
     /// Custom margin for every side
-    TopRightBottomLeft(f32, f32, f32, f32),
+    TopRightBottomLeft(f64, f64, f64, f64),
 }
 
 impl Margin {
     /// Margin top
     #[must_use]
-    pub fn margin_top(&self) -> f32 {
+    pub fn margin_top(&self) -> f64 {
         match self {
             Margin::All(f)
             | Margin::VerticalHorizontal(f, _)
@@ -266,7 +265,7 @@ impl Margin {
     }
     /// Margin right
     #[must_use]
-    pub fn margin_right(&self) -> f32 {
+    pub fn margin_right(&self) -> f64 {
         match self {
             Margin::All(f)
             | Margin::VerticalHorizontal(_, f)
@@ -275,7 +274,7 @@ impl Margin {
     }
     /// Margin bottom
     #[must_use]
-    pub fn margin_bottom(&self) -> f32 {
+    pub fn margin_bottom(&self) -> f64 {
         match self {
             Margin::All(f)
             | Margin::VerticalHorizontal(f, _)
@@ -284,7 +283,7 @@ impl Margin {
     }
     /// Margin left
     #[must_use]
-    pub fn margin_left(&self) -> f32 {
+    pub fn margin_left(&self) -> f64 {
         match self {
             Margin::All(f)
             | Margin::VerticalHorizontal(_, f)
@@ -300,30 +299,30 @@ impl FromStr for Margin {
         let values: Vec<&str> = s.split(' ').filter(|s| !s.is_empty()).collect();
         match values.len() {
             1 => {
-                let value = s.parse::<f32>().map_err(Error::InvalidMarginValue)?;
+                let value = s.parse::<f64>().map_err(Error::InvalidMarginValue)?;
                 Ok(Margin::All(value))
             }
             2 => {
                 let v = values[0]
-                    .parse::<f32>()
+                    .parse::<f64>()
                     .map_err(Error::InvalidMarginValue)?;
                 let h = values[1]
-                    .parse::<f32>()
+                    .parse::<f64>()
                     .map_err(Error::InvalidMarginValue)?;
                 Ok(Margin::VerticalHorizontal(v, h))
             }
             4 => {
                 let top = values[0]
-                    .parse::<f32>()
+                    .parse::<f64>()
                     .map_err(Error::InvalidMarginValue)?;
                 let right = values[1]
-                    .parse::<f32>()
+                    .parse::<f64>()
                     .map_err(Error::InvalidMarginValue)?;
                 let bottom = values[2]
-                    .parse::<f32>()
+                    .parse::<f64>()
                     .map_err(Error::InvalidMarginValue)?;
                 let left = values[2]
-                    .parse::<f32>()
+                    .parse::<f64>()
                     .map_err(Error::InvalidMarginValue)?;
                 Ok(Margin::TopRightBottomLeft(top, right, bottom, left))
             }
@@ -334,64 +333,66 @@ impl FromStr for Margin {
 
 #[cfg(test)]
 mod tests {
-    use test_case::test_case;
+    use assert2::{check, let_assert};
+    use rstest::rstest;
 
     use super::*;
 
-    #[test_case("a0", PaperSize::A0)]
-    #[test_case("A1", PaperSize::A1)]
-    #[test_case("A2", PaperSize::A2)]
-    #[test_case("A3", PaperSize::A3)]
-    #[test_case("A4", PaperSize::A4)]
-    #[test_case("A5", PaperSize::A5)]
-    #[test_case("A6", PaperSize::A6)]
-    #[test_case("letter", PaperSize::Letter)]
-    #[test_case("Legal", PaperSize::Legal)]
-    #[test_case("Tabloid", PaperSize::Tabloid)]
-    fn should_parse_valid_paper_size(value: &str, expected: PaperSize) {
+    #[rstest]
+    #[case::a0("a0", PaperSize::A0)]
+    #[case::a1("A1", PaperSize::A1)]
+    #[case::a2("A2", PaperSize::A2)]
+    #[case::a3("A3", PaperSize::A3)]
+    #[case::a4("A4", PaperSize::A4)]
+    #[case::a5("A5", PaperSize::A5)]
+    #[case::a6("A6", PaperSize::A6)]
+    #[case::letter("letter", PaperSize::Letter)]
+    #[case::legal("Legal", PaperSize::Legal)]
+    #[case::tabloid("Tabloid", PaperSize::Tabloid)]
+    fn should_parse_valid_paper_size(#[case] value: &str, #[case] expected: PaperSize) {
         let result = value.parse::<PaperSize>().unwrap();
-        assert_eq!(result, expected);
+        check!(result == expected);
     }
 
     #[test]
     fn should_reject_invalid_paper_size() {
         let value = "plop";
         let result = value.parse::<PaperSize>();
-        assert!(matches!(result, Err(Error::InvalidPaperSize(_))));
+        let_assert!(Err(Error::InvalidPaperSize(_)) = result);
     }
 
     #[test]
     fn should_parse_valid_margin_all() {
         let value = "0.4";
         let result = value.parse::<Margin>();
-        assert!(matches!(result, Ok(Margin::All(_))));
+        let_assert!(Ok(Margin::All(_)) = result);
     }
 
     #[test]
     fn should_parse_valid_margin_vh() {
         let value = "0.4  0.7";
         let result = value.parse::<Margin>();
-        assert!(matches!(result, Ok(Margin::VerticalHorizontal(_, _))));
+        let_assert!(Ok(Margin::VerticalHorizontal(_, _)) = result);
     }
 
     #[test]
     fn should_parse_valid_margin_trbl() {
         let value = "0.2   0.3 0.4  0.5";
         let result = value.parse::<Margin>();
-        assert!(matches!(result, Ok(Margin::TopRightBottomLeft(_, _, _, _))));
+        let_assert!(Ok(Margin::TopRightBottomLeft(_, _, _, _)) = result);
     }
 
     #[test]
     fn should_reject_invalid_margin() {
         let value = "0.2    0.3  0.4";
         let result = value.parse::<Margin>();
-        assert!(matches!(result, Err(Error::InvalidMarginDefinition(_))));
+        let_assert!(Err(Error::InvalidMarginDefinition(_)) = result);
     }
 
     #[test]
     fn should_reject_invalid_margin_value() {
         let value = "plop";
         let result = value.parse::<Margin>();
-        assert!(matches!(result, Err(Error::InvalidMarginValue(_))));
+        let_assert!(Err(Error::InvalidMarginValue(_)) = result);
     }
 }

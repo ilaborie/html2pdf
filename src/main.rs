@@ -1,8 +1,8 @@
 use std::env;
 
+use clap::Parser;
 use html2pdf::{run, Error, Options};
 use log::{debug, warn};
-use structopt::StructOpt;
 
 fn main() -> Result<(), Error> {
     let env_log = env::var("RUST_LOG");
@@ -15,7 +15,7 @@ fn main() -> Result<(), Error> {
         warn!("No RUST_LOG environment variable found, set log to 'info'")
     }
 
-    let opt = Options::from_args();
+    let opt = Options::parse();
     debug!("Options: {opt:#?}");
 
     // Let's go

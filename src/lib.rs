@@ -14,7 +14,8 @@ use std::thread::sleep;
 use std::time::Duration;
 use std::{fs, io};
 
-use headless_chrome::protocol::page::PrintToPdfOptions;
+use anyhow::Result;
+use headless_chrome::types::PrintToPdfOptions;
 use headless_chrome::{Browser, LaunchOptionsBuilder};
 use humantime::format_duration;
 use log::{debug, info};
@@ -56,8 +57,8 @@ impl From<ParseFloatError> for Error {
     }
 }
 
-impl From<failure::Error> for Error {
-    fn from(source: failure::Error) -> Self {
+impl From<anyhow::Error> for Error {
+    fn from(source: anyhow::Error) -> Self {
         Error::HeadlessChromeError(source.to_string())
     }
 }
@@ -120,7 +121,7 @@ fn print_to_pdf(
     file_path: &str,
     pdf_options: PrintToPdfOptions,
     wait: Option<Duration>,
-) -> Result<Vec<u8>, failure::Error> {
+) -> Result<Vec<u8>> {
     let options = LaunchOptionsBuilder::default()
         .build()
         .expect("Default should not panic");
