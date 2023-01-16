@@ -53,7 +53,7 @@ impl From<failure::Error> for Error {
 }
 
 /// Run HTML to PDF with headless_chrome
-pub fn run(opt: CliOptions) -> Result<(), Error> {
+pub fn run(opt: Options) -> Result<(), Error> {
     let input = dunce::canonicalize(opt.input())?;
     let output = if let Some(out) = opt.output() {
         out.clone()

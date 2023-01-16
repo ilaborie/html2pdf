@@ -11,28 +11,28 @@ use crate::Error;
 
 /// Generate a PDF from a local HTML file using a headless chrome
 #[derive(Debug, StructOpt)]
-pub struct CliOptions {
+pub struct Options {
     /// Input HTML file.
     #[structopt()]
-    input: PathBuf,
+    pub input: PathBuf,
 
     /// Output file.
     /// By default, just change the input extension to PDF
     #[structopt(short, long)]
-    output: Option<PathBuf>,
+    pub output: Option<PathBuf>,
 
     /// Use landscape mode.
     #[structopt(long)]
-    landscape: bool,
+    pub landscape: bool,
 
     /// Allow print background.
     #[structopt(long)]
-    background: bool,
+    pub background: bool,
 
     /// Time to wait in ms before printing.
     /// Examples: 150ms, 10s
     #[structopt(long, parse(try_from_str = parse_duration))]
-    wait: Option<Duration>,
+    pub wait: Option<Duration>,
 
     /// HTML template for the print header.
     /// Should be valid HTML markup with following classes used to inject printing values into
@@ -44,26 +44,26 @@ pub struct CliOptions {
     /// totalPages for total pages in the document.
     /// For example, `<span class=title></span>` would generate span containing the title.
     #[structopt(long)]
-    header: Option<String>,
+    pub header: Option<String>,
 
     /// HTML template for the print footer.
     /// Should use the same format as the headerTemplate.
     #[structopt(long)]
-    footer: Option<String>,
+    pub footer: Option<String>,
 
     /// Paper size.
     /// Supported values: A4, Letter, A3, Tabloid, A2, A1, A0, A5, A6
     #[structopt(long)]
-    paper: Option<PaperSize>,
+    pub paper: Option<PaperSize>,
 
     /// Scale, default to 1.0
     #[structopt(long)]
-    scale: Option<f32>,
+    pub scale: Option<f32>,
 
     /// Paper ranges to print,
     /// e.g. '1-5, 8, 11-13'
     #[structopt(long)]
-    range: Option<String>,
+    pub range: Option<String>,
 
     /// Margin in inches
     /// You can define margin like this:
@@ -71,10 +71,10 @@ pub struct CliOptions {
     /// '0.4 0.4' : first value is applied for top and bottom, second for left and right,
     /// '0.4 0.4 0.4 0.4' : first value is applied for top then, right, then bottom, and last for left
     #[structopt(long)]
-    margin: Option<Margin>,
+    pub margin: Option<Margin>,
 }
 
-impl CliOptions {
+impl Options {
     /// Get a reference to the cli options's input.
     pub fn input(&self) -> &PathBuf {
         &self.input
@@ -131,8 +131,8 @@ impl CliOptions {
     }
 }
 
-impl From<&CliOptions> for PrintToPdfOptions {
-    fn from(opt: &CliOptions) -> Self {
+impl From<&Options> for PrintToPdfOptions {
+    fn from(opt: &Options) -> Self {
         PrintToPdfOptions {
             landscape: Some(opt.landscape()),
             display_header_footer: Some(opt.header().is_some() || opt.footer().is_some()),

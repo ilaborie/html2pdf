@@ -1,6 +1,6 @@
 use std::env;
 
-use html2pdf::{run, CliOptions, Error};
+use html2pdf::{run, Options, Error};
 use log::{debug, warn};
 use structopt::StructOpt;
 
@@ -15,8 +15,8 @@ fn main() -> Result<(), Error> {
         warn!("No RUST_LOG environment variable found, set log to 'info'")
     }
 
-    let opt = CliOptions::from_args();
-    debug!("CliOptions: {:#?}", opt);
+    let opt = Options::from_args();
+    debug!("Options: {:#?}", opt);
 
     // Let's go
     run(opt)
