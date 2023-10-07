@@ -126,7 +126,7 @@ fn print_to_pdf(
         .build()
         .expect("Default should not panic");
     let browser = Browser::new(options)?;
-    let tab = browser.wait_for_initial_tab()?;
+    let tab = browser.new_tab()?;
     let tab = tab.navigate_to(file_path)?.wait_until_navigated()?;
 
     if let Some(wait) = wait {
