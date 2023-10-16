@@ -4,6 +4,7 @@ use std::time::Duration;
 
 use clap::Parser;
 use headless_chrome::types::PrintToPdfOptions;
+use headless_chrome::LaunchOptions;
 use humantime::parse_duration;
 
 use crate::Error;
@@ -70,6 +71,11 @@ pub struct Options {
     /// '0.4 0.4 0.4 0.4' : first value is applied for top then, right, then bottom, and last for left
     #[clap(long)]
     pub margin: Option<Margin>,
+
+    /// Disable Chrome sandbox
+    /// Not recommended, unless running on docker
+    #[clap(long)]
+    pub disable_sandbox: bool,
 }
 
 impl Options {
@@ -138,6 +144,12 @@ impl Options {
     pub fn range(&self) -> Option<&String> {
         self.range.as_ref()
     }
+
+    /// Get a reference to the cli options's sandbox.
+    #[must_use]
+    pub fn disable_sandbox(&self) -> bool {
+        self.disable_sandbox
+    }
 }
 
 impl From<&Options> for PrintToPdfOptions {
@@ -159,6 +171,15 @@ impl From<&Options> for PrintToPdfOptions {
             footer_template: opt.footer().cloned(),
             prefer_css_page_size: None,
             transfer_mode: None,
+        }
+    }
+}
+
+impl From<&Options> for LaunchOptions<'_> {
+    fn from(opt: &Options) -> Self {
+        LaunchOptions {
+            sandbox: !opt.disable_sandbox(),
+            ..Default::default()
         }
     }
 }

@@ -37,26 +37,28 @@ USAGE:
     html2pdf [FLAGS] [OPTIONS] <input>
 
 FLAGS:
-        --background    Allow print background
-    -h, --help          Prints help information
-        --landscape     Use landscape mode
-    -V, --version       Prints version information
+        --background       Allow print background
+    -h, --help             Prints help information
+        --landscape        Use landscape mode
+        --disable-sandbox  Disable Chrome sandbox. Not recommended, unless running on docker
+
+    -V, --version          Prints version information
 
 OPTIONS:
-        --footer <footer>    HTML template for the print footer. Should use the same format as the headerTemplate
-        --header <header>    HTML template for the print header. Should be valid HTML markup with following classes used
-                             to inject printing values into them: date for formatted print date, title for document
-                             title, url for document location, pageNumber for current page number, totalPages for total
-                             pages in the document. For example, `<span class=title></span>` would generate span
-                             containing the title
-        --margin <margin>    Margin in inches You can define margin like this: '0.4' the value is applied for all side,
-                             '0.4 0.4' : first value is applied for top and bottom, second for left and right, '0.4 0.4
-                             0.4 0.4' : first value is applied for top then, right, then bottom, and last for left
-    -o, --output <output>    Output file. By default, just change the input extension to PDF
-        --paper <paper>      Paper size. Supported values: A4, Letter, A3, Tabloid, A2, A1, A0, A5, A6
-        --range <range>      Paper ranges to print, e.g. '1-5, 8, 11-13'
-        --scale <scale>      Scale, default to 1.0
-        --wait <wait>        Time to wait in ms before printing. Examples: 150ms, 10s
+        --footer <footer>  HTML template for the print footer. Should use the same format as the headerTemplate
+        --header <header>  HTML template for the print header. Should be valid HTML markup with following classes used
+                           to inject printing values into them: date for formatted print date, title for document
+                           title, url for document location, pageNumber for current page number, totalPages for total
+                           pages in the document. For example, `<span class=title></span>` would generate span
+                           containing the title
+        --margin <margin>  Margin in inches You can define margin like this: '0.4' the value is applied for all side,
+                                  '0.4 0.4' : first value is applied for top and bottom, second for left and right, '0.4 0.4
+                                  0.4 0.4' : first value is applied for top then, right, then bottom, and last for left
+    -o, --output <output>  Output file. By default, just change the input extension to PDF
+        --paper <paper>    Paper size. Supported values: A4, Letter, A3, Tabloid, A2, A1, A0, A5, A6
+        --range <range>    Paper ranges to print, e.g. '1-5, 8, 11-13'
+        --scale <scale>    Scale, default to 1.0
+        --wait <wait>      Time to wait in ms before printing. Examples: 150ms, 10s
 
 ARGS:
     <input>    Input HTML file
