@@ -13,7 +13,7 @@ categories = ["command-line-utilities", "encoding"]
 [dependencies]
 headless_chrome = "1.0"
 
-clap = { version = "4.1", features = ["derive"] }
+clap = { version = "4.4", features = ["derive"] }
 
 humantime = "2.1"
 
