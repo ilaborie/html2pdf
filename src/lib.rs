@@ -16,7 +16,7 @@ use std::{fs, io};
 
 use anyhow::Result;
 use headless_chrome::types::PrintToPdfOptions;
-use headless_chrome::{Browser, LaunchOptionsBuilder};
+use headless_chrome::{Browser, LaunchOptions};
 use humantime::format_duration;
 use log::{debug, info};
 use thiserror::Error;
@@ -78,7 +78,7 @@ pub fn run(opt: &Options) -> Result<(), Error> {
         path
     };
 
-    html_to_pdf(input, output, opt.into(), opt.wait())?;
+    html_to_pdf(input, output, opt.into(), opt.into(), opt.wait())?;
 
     Ok(())
 }
@@ -95,6 +95,7 @@ pub fn html_to_pdf<I, O>(
     input: I,
     output: O,
     pdf_options: PrintToPdfOptions,
+    launch_options: LaunchOptions,
     wait: Option<Duration>,
 ) -> Result<(), Error>
 where
@@ -109,7 +110,7 @@ where
     let input = format!("file://{os}");
     info!("Input file: {input}");
 
-    let local_pdf = print_to_pdf(&input, pdf_options, wait)?;
+    let local_pdf = print_to_pdf(&input, pdf_options, launch_options, wait)?;
 
     info!("Output file: {:?}", output.as_ref());
     fs::write(output.as_ref(), local_pdf)?;
@@ -120,12 +121,10 @@ where
 fn print_to_pdf(
     file_path: &str,
     pdf_options: PrintToPdfOptions,
+    launch_options: LaunchOptions,
     wait: Option<Duration>,
 ) -> Result<Vec<u8>> {
-    let options = LaunchOptionsBuilder::default()
-        .build()
-        .expect("Default should not panic");
-    let browser = Browser::new(options)?;
+    let browser = Browser::new(launch_options)?;
     let tab = browser.new_tab()?;
     let tab = tab.navigate_to(file_path)?.wait_until_navigated()?;
 
