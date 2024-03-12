@@ -179,6 +179,7 @@ impl From<&Options> for LaunchOptions<'_> {
     fn from(opt: &Options) -> Self {
         LaunchOptions {
             sandbox: !opt.disable_sandbox(),
+            idle_browser_timeout: opt.wait().unwrap_or(Duration::from_secs(30)),
             ..Default::default()
         }
     }
