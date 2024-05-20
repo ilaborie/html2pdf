@@ -14,7 +14,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Install cargo-semver-checks
-        uses: jaxxstorm/action-install-gh-release@v1.11.0
+        uses: jaxxstorm/action-install-gh-release@v1.12.0
         with:
           repo: obi1kenobi/cargo-semver-checks
           tag: v0.29.1
