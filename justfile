@@ -10,18 +10,16 @@ requirements:
     rustup toolchain add nightly
     @echo "Install cargo-nextest to run test"
     cargo install cargo-nextest
-    @echo "Install cargo-nextest for tdd"
-    cargo install cargo-watch
+    @echo "Install "bacon for tdd"
+    cargo install bacon
     @echo "Install cargo-audit for audit"
     cargo install cargo-audit
     @echo "Install cargo-deny for audit"
     cargo install cargo-deny
-    @echo "Install cargo-release for release"
-    cargo install cargo-release
 
 # Run TDD mode
 tdd:
-    cargo watch -c -s "just check"
+    bacon nextest
 
 # Launch tests
 test:
@@ -63,7 +61,3 @@ build:
     @just check
     echo "⚙️ Build"
     cargo build --release
-
-# Release
-release *ARGS="--help":
-    cargo release {{ARGS}}

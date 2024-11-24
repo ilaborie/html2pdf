@@ -1,23 +1,33 @@
-use std::env;
-
 use clap::Parser;
 use html2pdf::{run, Error, Options};
-use log::{debug, warn};
+use tracing::debug;
 
 fn main() -> Result<(), Error> {
-    let env_log = env::var("RUST_LOG");
-    if let Ok(level) = env_log {
-        pretty_env_logger::init();
-        debug!("RUST_LOG is {level}");
-    } else {
-        env::set_var("RUST_LOG", "info");
-        pretty_env_logger::init();
-        warn!("No RUST_LOG environment variable found, set log to 'info'")
-    }
+    init_tracing();
 
-    let opt = Options::parse();
-    debug!("Options: {opt:#?}");
+    let options = Options::parse();
+    debug!(?options, "Parsed arguments");
 
     // Let's go
-    run(&opt)
+    run(&options)
+}
+
+fn init_tracing() {
+    use tracing::level_filters::LevelFilter;
+    use tracing_subscriber::fmt::format::FmtSpan;
+    use tracing_subscriber::fmt::time;
+    use tracing_subscriber::EnvFilter;
+
+    tracing_subscriber::fmt()
+        .with_line_number(true)
+        .with_thread_names(true)
+        .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE)
+        .with_timer(time::uptime())
+        .with_env_filter(
+            EnvFilter::builder()
+                .with_default_directive(LevelFilter::INFO.into())
+                .from_env_lossy(),
+        )
+        .pretty()
+        .init();
 }
