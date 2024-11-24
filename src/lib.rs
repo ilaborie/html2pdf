@@ -17,50 +17,43 @@ use std::{fs, io};
 use anyhow::Result;
 use headless_chrome::types::PrintToPdfOptions;
 use headless_chrome::{Browser, LaunchOptions};
-use humantime::format_duration;
-use log::{debug, info};
-use thiserror::Error;
+use tracing::{debug, info};
 
 mod cli;
 
 pub use cli::*;
 
 /// The html2pdf Error
-#[derive(Error, Debug)]
+#[derive(Debug, derive_more::Error, derive_more::Display, derive_more::From)]
 pub enum Error {
     /// Invalid paper size
-    #[error(
-        "Invalid paper size {0}, expected a value in A4, Letter, A3, Tabloid, A2, A1, A0, A5, A6"
+    #[display(
+        "Invalid paper size {size}, expected a value in A4, Letter, A3, Tabloid, A2, A1, A0, A5, A6"
     )]
-    InvalidPaperSize(String),
-    /// Invalid margin definition
-    #[error("Invalid margin definition, expected 1, 2, or 4 value, got {0}")]
-    InvalidMarginDefinition(String),
-    /// Invalid margin value
-    #[error("Invalid margin value: {0}")]
-    InvalidMarginValue(ParseFloatError),
-    /// Headless chrome issue
-    #[error("Oops, an error occurs with headless chrome: {0}")]
-    HeadlessChromeError(String),
-    /// I/O issue
-    #[error("Oops, an error occurs with IO")]
-    IoError {
-        /// The source error
-        #[from]
-        source: io::Error,
+    #[from(ignore)]
+    InvalidPaperSize {
+        /// The invalid size
+        size: String,
     },
-}
 
-impl From<ParseFloatError> for Error {
-    fn from(source: ParseFloatError) -> Self {
-        Error::InvalidMarginValue(source)
-    }
-}
+    /// Invalid margin definition
+    #[display("Invalid margin definition, expected 1, 2, or 4 value, got {margin}")]
+    #[from(ignore)]
+    InvalidMarginDefinition {
+        /// the invalid margin
+        margin: String,
+    },
 
-impl From<anyhow::Error> for Error {
-    fn from(source: anyhow::Error) -> Self {
-        Error::HeadlessChromeError(source.to_string())
-    }
+    /// Invalid margin value
+    #[display("Invalid margin value: {_0}")]
+    InvalidMarginValue(ParseFloatError),
+
+    /// Headless chrome issue
+    #[display("Oops, an error occurs with headless chrome: {_0}")]
+    HeadlessChromeError(anyhow::Error),
+
+    /// I/O issue
+    IoError(io::Error),
 }
 
 /// Run HTML to PDF with `headless_chrome`
@@ -108,11 +101,11 @@ where
         .to_str()
         .ok_or_else(|| io::Error::from(ErrorKind::InvalidInput))?;
     let input = format!("file://{os}");
-    info!("Input file: {input}");
+    info!(%input, "Input file");
 
     let local_pdf = print_to_pdf(&input, pdf_options, launch_options, wait)?;
 
-    info!("Output file: {:?}", output.as_ref());
+    info!(?output, "Output file");
     fs::write(output.as_ref(), local_pdf)?;
 
     Ok(())
@@ -129,11 +122,11 @@ fn print_to_pdf(
     let tab = tab.navigate_to(file_path)?.wait_until_navigated()?;
 
     if let Some(wait) = wait {
-        info!("Waiting {} before export to PDF", format_duration(wait));
+        info!(?wait, "Waiting before export to PDF");
         sleep(wait);
     }
 
-    debug!("Using PDF options: {:?}", pdf_options);
+    debug!(?pdf_options, "Using PDF options");
     let bytes = tab.print_to_pdf(Some(pdf_options))?;
 
     Ok(bytes)

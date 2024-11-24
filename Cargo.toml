@@ -11,19 +11,15 @@ keywords = ["cli", "pdf"]
 categories = ["command-line-utilities", "encoding"]
 
 [dependencies]
-headless_chrome = "1.0"
-
-clap = { version = "4.4", features = ["derive"] }
-
-humantime = "2.1"
-
-anyhow = "1.0"
-thiserror = "1.0"
-
-log = "0.4"
-pretty_env_logger = "0.5"
-dunce = "1.0"
+anyhow = "1.0.93"
+clap = { version = "4.5.21", features = ["derive"] }
+derive_more = { version = "1.0.0", features = ["from", "error", "display"] }
+dunce = "1.0.5"
+headless_chrome = "1.0.15"
+humantime = "2.1.0"
+tracing = "0.1.40"
+tracing-subscriber = { version = "0.3.18", features = ["env-filter", "fmt"] }
 
 [dev-dependencies]
-rstest = "0.18"
-assert2 = "0.3"
+assert2 = "0.3.15"
+rstest = "0.23.0"

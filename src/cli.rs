@@ -186,26 +186,35 @@ impl From<&Options> for LaunchOptions<'_> {
 }
 
 /// Paper size
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, derive_more::Display)]
 pub enum PaperSize {
     /// A0 (84.1cm × 118.9cm)
     A0,
+
     /// A1 (59.4cm × 84.1cm)
     A1,
+
     /// A2 (42.0cm × 59.4cm)
     A2,
+
     /// A3 (29.7cm × 42.0cm)
     A3,
+
     /// A4 (21.0cm × 29.7 cm)
     A4,
+
     /// A5 (14.8cm × 21.0cm)
     A5,
+
     /// A6 (10.5cm × 14.8cm)
     A6,
+
     /// US Letter (11.0in × 8.5in)
     Letter,
+
     /// Legal (17in × 8.5in)
     Legal,
+
     /// Tabloid (17in × 11in)
     Tabloid,
 }
@@ -215,15 +224,15 @@ impl PaperSize {
     #[must_use]
     pub fn paper_width(&self) -> f64 {
         match self {
-            PaperSize::A0 => 33.1,
-            PaperSize::A1 => 23.4,
-            PaperSize::A2 => 16.5,
-            PaperSize::A3 => 11.7,
-            PaperSize::A4 => 8.27,
-            PaperSize::A5 => 5.83,
-            PaperSize::A6 => 4.13,
-            PaperSize::Letter | PaperSize::Legal => 8.5,
-            PaperSize::Tabloid => 11.0,
+            Self::A0 => 33.1,
+            Self::A1 => 23.4,
+            Self::A2 => 16.5,
+            Self::A3 => 11.7,
+            Self::A4 => 8.27,
+            Self::A5 => 5.83,
+            Self::A6 => 4.13,
+            Self::Letter | Self::Legal => 8.5,
+            Self::Tabloid => 11.0,
         }
     }
 
@@ -231,15 +240,15 @@ impl PaperSize {
     #[must_use]
     pub fn paper_height(&self) -> f64 {
         match self {
-            PaperSize::A0 => 46.8,
-            PaperSize::A1 => 33.1,
-            PaperSize::A2 => 23.4,
-            PaperSize::A3 => 16.5,
-            PaperSize::A4 => 11.7,
-            PaperSize::A5 => 8.27,
-            PaperSize::A6 => 5.83,
-            PaperSize::Letter => 11.0,
-            PaperSize::Legal | PaperSize::Tabloid => 17.0,
+            Self::A0 => 46.8,
+            Self::A1 => 33.1,
+            Self::A2 => 23.4,
+            Self::A3 => 16.5,
+            Self::A4 => 11.7,
+            Self::A5 => 8.27,
+            Self::A6 => 5.83,
+            Self::Letter => 11.0,
+            Self::Legal | Self::Tabloid => 17.0,
         }
     }
 }
@@ -259,7 +268,9 @@ impl FromStr for PaperSize {
             "letter" => Ok(Self::Letter),
             "legal" => Ok(Self::Legal),
             "tabloid" => Ok(Self::Tabloid),
-            _ => Err(Error::InvalidPaperSize(s.to_string())),
+            _ => Err(Error::InvalidPaperSize {
+                size: s.to_string(),
+            }),
         }
     }
 }
@@ -269,8 +280,10 @@ impl FromStr for PaperSize {
 pub enum Margin {
     /// Same margin on all side
     All(f64),
+
     /// Same margin vertically and horizontally
     VerticalHorizontal(f64, f64),
+
     /// Custom margin for every side
     TopRightBottomLeft(f64, f64, f64, f64),
 }
@@ -321,34 +334,24 @@ impl FromStr for Margin {
         let values: Vec<&str> = s.split(' ').filter(|s| !s.is_empty()).collect();
         match values.len() {
             1 => {
-                let value = s.parse::<f64>().map_err(Error::InvalidMarginValue)?;
+                let value = s.parse::<f64>()?;
                 Ok(Margin::All(value))
             }
             2 => {
-                let v = values[0]
-                    .parse::<f64>()
-                    .map_err(Error::InvalidMarginValue)?;
-                let h = values[1]
-                    .parse::<f64>()
-                    .map_err(Error::InvalidMarginValue)?;
+                let v = values[0].parse::<f64>()?;
+                let h = values[1].parse::<f64>()?;
                 Ok(Margin::VerticalHorizontal(v, h))
             }
             4 => {
-                let top = values[0]
-                    .parse::<f64>()
-                    .map_err(Error::InvalidMarginValue)?;
-                let right = values[1]
-                    .parse::<f64>()
-                    .map_err(Error::InvalidMarginValue)?;
-                let bottom = values[2]
-                    .parse::<f64>()
-                    .map_err(Error::InvalidMarginValue)?;
-                let left = values[2]
-                    .parse::<f64>()
-                    .map_err(Error::InvalidMarginValue)?;
+                let top = values[0].parse::<f64>()?;
+                let right = values[1].parse::<f64>()?;
+                let bottom = values[2].parse::<f64>()?;
+                let left = values[2].parse::<f64>()?;
                 Ok(Margin::TopRightBottomLeft(top, right, bottom, left))
             }
-            _ => Err(Error::InvalidMarginDefinition(s.to_string())),
+            _ => Err(Error::InvalidMarginDefinition {
+                margin: s.to_string(),
+            }),
         }
     }
 }
@@ -380,7 +383,7 @@ mod tests {
     fn should_reject_invalid_paper_size() {
         let value = "plop";
         let result = value.parse::<PaperSize>();
-        let_assert!(Err(Error::InvalidPaperSize(_)) = result);
+        let_assert!(Err(Error::InvalidPaperSize { .. }) = result);
     }
 
     #[test]
@@ -408,7 +411,7 @@ mod tests {
     fn should_reject_invalid_margin() {
         let value = "0.2    0.3  0.4";
         let result = value.parse::<Margin>();
-        let_assert!(Err(Error::InvalidMarginDefinition(_)) = result);
+        let_assert!(Err(Error::InvalidMarginDefinition { .. }) = result);
     }
 
     #[test]
