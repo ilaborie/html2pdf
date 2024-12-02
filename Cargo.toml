@@ -17,7 +17,7 @@ derive_more = { version = "1.0.0", features = ["from", "error", "display"] }
 dunce = "1.0.5"
 headless_chrome = "1.0.15"
 humantime = "2.1.0"
-tracing = "0.1.40"
+tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter", "fmt"] }
 
 [dev-dependencies]
