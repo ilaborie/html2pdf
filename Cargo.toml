@@ -11,7 +11,7 @@ keywords = ["cli", "pdf"]
 categories = ["command-line-utilities", "encoding"]
 
 [dependencies]
-anyhow = "1.0.93"
+anyhow = "1.0.95"
 clap = { version = "4.5.21", features = ["derive"] }
 derive_more = { version = "1.0.0", features = ["from", "error", "display"] }
 dunce = "1.0.5"
