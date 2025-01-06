@@ -22,4 +22,4 @@ tracing-subscriber = { version = "0.3.18", features = ["env-filter", "fmt"] }
 
 [dev-dependencies]
 assert2 = "0.3.15"
-rstest = "0.23.0"
+rstest = "0.24.0"
