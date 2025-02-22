@@ -16,7 +16,7 @@ anyhow = "1.0.93"
 clap = { version = "4.5.21", features = ["derive"] }
 derive_more = { version = "1.0.0", features = ["from", "error", "display"] }
 dunce = "1.0.5"
-headless_chrome = "1.0.15"
+headless_chrome = "1.0.16"
 humantime = "2.1.0"
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter", "fmt"] }
