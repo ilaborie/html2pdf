@@ -171,6 +171,8 @@ impl From<&Options> for PrintToPdfOptions {
             footer_template: opt.footer().cloned(),
             prefer_css_page_size: None,
             transfer_mode: None,
+            generate_document_outline: None,
+            generate_tagged_pdf: None,
         }
     }
 }
