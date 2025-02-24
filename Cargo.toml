@@ -1,6 +1,6 @@
 [package]
 name = "html2pdf"
-version = "0.8.1"
+version = "0.8.2"
 edition = "2021"
 authors = ["Igor Laborie <ilaborie@gmail.com>"]
 description = "Convert HTML to PDF using a Headless Chrome browser"
