@@ -11,6 +11,7 @@ use crate::Error;
 
 /// Generate a PDF from a local HTML file using a headless chrome
 #[derive(Debug, Parser)]
+#[clap(version)]
 pub struct Options {
     /// Input HTML file.
     pub input: PathBuf,
