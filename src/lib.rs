@@ -62,24 +62,19 @@ pub enum Error {
 ///
 /// Could fail if there is I/O or Chrome headless issue
 pub fn run(opt: &Options) -> Result<(), Error> {
-    let input = dunce::canonicalize(opt.input())?;
-    let output = if let Some(path) = opt.output() {
-        path.clone()
-    } else {
-        let mut path = opt.input().clone();
+    let input = dunce::canonicalize(&opt.input)?;
+    let output = opt.output.clone().unwrap_or_else(|| {
+        let mut path = opt.input.clone();
         path.set_extension("pdf");
         path
-    };
+    });
 
-    html_to_pdf(input, output, opt.into(), opt.into(), opt.wait())?;
+    html_to_pdf(input, output, opt.into(), opt.into(), opt.wait)?;
 
     Ok(())
 }
 
 /// Run HTML to PDF with `headless_chrome`
-///
-/// # Panics
-/// Sorry, no error handling, just panic
 ///
 /// # Errors
 ///

@@ -79,101 +79,23 @@ pub struct Options {
     pub disable_sandbox: bool,
 }
 
-impl Options {
-    /// Get a reference to the cli options's input.
-    #[must_use]
-    pub fn input(&self) -> &PathBuf {
-        &self.input
-    }
-
-    /// Get a reference to the cli options's output.
-    #[must_use]
-    pub fn output(&self) -> Option<&PathBuf> {
-        self.output.as_ref()
-    }
-
-    /// Get a reference to the cli options's landscape.
-    #[must_use]
-    pub fn landscape(&self) -> bool {
-        self.landscape
-    }
-
-    /// Get a reference to the cli options's background.
-    #[must_use]
-    pub fn background(&self) -> bool {
-        self.background
-    }
-
-    /// Get a reference to the cli options's wait.
-    #[must_use]
-    pub fn wait(&self) -> Option<Duration> {
-        self.wait
-    }
-
-    /// Get a reference to the cli options's header.
-    #[must_use]
-    pub fn header(&self) -> Option<&String> {
-        self.header.as_ref()
-    }
-
-    /// Get a reference to the cli options's footer.
-    #[must_use]
-    pub fn footer(&self) -> Option<&String> {
-        self.footer.as_ref()
-    }
-
-    /// Get a reference to the cli options's paper.
-    #[must_use]
-    pub fn paper(&self) -> Option<&PaperSize> {
-        self.paper.as_ref()
-    }
-
-    /// Get a reference to the cli options's scale.
-    #[must_use]
-    pub fn scale(&self) -> Option<f64> {
-        self.scale
-    }
-
-    /// Get a reference to the cli options's margin.
-    #[must_use]
-    pub fn margin(&self) -> Option<&Margin> {
-        self.margin.as_ref()
-    }
-
-    /// Get a reference to the cli options's range.
-    #[must_use]
-    pub fn range(&self) -> Option<&String> {
-        self.range.as_ref()
-    }
-
-    /// Get a reference to the cli options's sandbox.
-    #[must_use]
-    pub fn disable_sandbox(&self) -> bool {
-        self.disable_sandbox
-    }
-}
-
 impl From<&Options> for PrintToPdfOptions {
     fn from(opt: &Options) -> Self {
         PrintToPdfOptions {
-            landscape: Some(opt.landscape()),
-            display_header_footer: Some(opt.header().is_some() || opt.footer().is_some()),
-            print_background: Some(opt.background()),
-            scale: opt.scale(),
-            paper_width: opt.paper().map(PaperSize::paper_width),
-            paper_height: opt.paper().map(PaperSize::paper_height),
-            margin_top: opt.margin().map(Margin::margin_top),
-            margin_bottom: opt.margin().map(Margin::margin_bottom),
-            margin_left: opt.margin().map(Margin::margin_left),
-            margin_right: opt.margin().map(Margin::margin_right),
-            page_ranges: opt.range().cloned(),
-            ignore_invalid_page_ranges: None,
-            header_template: opt.header().cloned(),
-            footer_template: opt.footer().cloned(),
-            prefer_css_page_size: None,
-            transfer_mode: None,
-            generate_document_outline: None,
-            generate_tagged_pdf: None,
+            landscape: Some(opt.landscape),
+            display_header_footer: Some(opt.header.is_some() || opt.footer.is_some()),
+            print_background: Some(opt.background),
+            scale: opt.scale,
+            paper_width: opt.paper.map(|p| p.dimensions().0),
+            paper_height: opt.paper.map(|p| p.dimensions().1),
+            margin_top: opt.margin.as_ref().map(|m| m.top),
+            margin_bottom: opt.margin.as_ref().map(|m| m.bottom),
+            margin_left: opt.margin.as_ref().map(|m| m.left),
+            margin_right: opt.margin.as_ref().map(|m| m.right),
+            page_ranges: opt.range.clone(),
+            header_template: opt.header.clone(),
+            footer_template: opt.footer.clone(),
+            ..Default::default()
         }
     }
 }
@@ -181,8 +103,8 @@ impl From<&Options> for PrintToPdfOptions {
 impl From<&Options> for LaunchOptions<'_> {
     fn from(opt: &Options) -> Self {
         LaunchOptions {
-            sandbox: !opt.disable_sandbox(),
-            idle_browser_timeout: opt.wait().unwrap_or(Duration::from_secs(30)),
+            sandbox: !opt.disable_sandbox,
+            idle_browser_timeout: opt.wait.unwrap_or_default().max(Duration::from_secs(30)),
             ..Default::default()
         }
     }
@@ -223,36 +145,33 @@ pub enum PaperSize {
 }
 
 impl PaperSize {
-    /// The width
+    /// Returns `(width_inches, height_inches)` for this paper size.
     #[must_use]
-    pub fn paper_width(&self) -> f64 {
+    pub fn dimensions(self) -> (f64, f64) {
         match self {
-            Self::A0 => 33.1,
-            Self::A1 => 23.4,
-            Self::A2 => 16.5,
-            Self::A3 => 11.7,
-            Self::A4 => 8.27,
-            Self::A5 => 5.83,
-            Self::A6 => 4.13,
-            Self::Letter | Self::Legal => 8.5,
-            Self::Tabloid => 11.0,
+            Self::A0 => (33.1, 46.8),
+            Self::A1 => (23.4, 33.1),
+            Self::A2 => (16.5, 23.4),
+            Self::A3 => (11.7, 16.5),
+            Self::A4 => (8.27, 11.7),
+            Self::A5 => (5.83, 8.27),
+            Self::A6 => (4.13, 5.83),
+            Self::Letter => (8.5, 11.0),
+            Self::Legal => (8.5, 17.0),
+            Self::Tabloid => (11.0, 17.0),
         }
     }
 
-    /// The height
+    /// Width in inches.
     #[must_use]
-    pub fn paper_height(&self) -> f64 {
-        match self {
-            Self::A0 => 46.8,
-            Self::A1 => 33.1,
-            Self::A2 => 23.4,
-            Self::A3 => 16.5,
-            Self::A4 => 11.7,
-            Self::A5 => 8.27,
-            Self::A6 => 5.83,
-            Self::Letter => 11.0,
-            Self::Legal | Self::Tabloid => 17.0,
-        }
+    pub fn paper_width(self) -> f64 {
+        self.dimensions().0
+    }
+
+    /// Height in inches.
+    #[must_use]
+    pub fn paper_height(self) -> f64 {
+        self.dimensions().1
     }
 }
 
@@ -278,56 +197,17 @@ impl FromStr for PaperSize {
     }
 }
 
-/// Margin definition
+/// Margin definition in inches (top, right, bottom, left)
 #[derive(Debug, Clone, PartialEq)]
-pub enum Margin {
-    /// Same margin on all side
-    All(f64),
-
-    /// Same margin vertically and horizontally
-    VerticalHorizontal(f64, f64),
-
-    /// Custom margin for every side
-    TopRightBottomLeft(f64, f64, f64, f64),
-}
-
-impl Margin {
-    /// Margin top
-    #[must_use]
-    pub fn margin_top(&self) -> f64 {
-        match self {
-            Margin::All(f)
-            | Margin::VerticalHorizontal(f, _)
-            | Margin::TopRightBottomLeft(f, _, _, _) => *f,
-        }
-    }
-    /// Margin right
-    #[must_use]
-    pub fn margin_right(&self) -> f64 {
-        match self {
-            Margin::All(f)
-            | Margin::VerticalHorizontal(_, f)
-            | Margin::TopRightBottomLeft(_, f, _, _) => *f,
-        }
-    }
-    /// Margin bottom
-    #[must_use]
-    pub fn margin_bottom(&self) -> f64 {
-        match self {
-            Margin::All(f)
-            | Margin::VerticalHorizontal(f, _)
-            | Margin::TopRightBottomLeft(_, _, f, _) => *f,
-        }
-    }
-    /// Margin left
-    #[must_use]
-    pub fn margin_left(&self) -> f64 {
-        match self {
-            Margin::All(f)
-            | Margin::VerticalHorizontal(_, f)
-            | Margin::TopRightBottomLeft(_, _, _, f) => *f,
-        }
-    }
+pub struct Margin {
+    /// Top margin
+    pub top: f64,
+    /// Right margin
+    pub right: f64,
+    /// Bottom margin
+    pub bottom: f64,
+    /// Left margin
+    pub left: f64,
 }
 
 impl FromStr for Margin {
@@ -337,21 +217,30 @@ impl FromStr for Margin {
         let values: Vec<&str> = s.split(' ').filter(|s| !s.is_empty()).collect();
         match values.len() {
             1 => {
-                let value = s.parse::<f64>()?;
-                Ok(Margin::All(value))
+                let all = s.parse::<f64>()?;
+                Ok(Self {
+                    top: all,
+                    right: all,
+                    bottom: all,
+                    left: all,
+                })
             }
             2 => {
                 let v = values[0].parse::<f64>()?;
                 let h = values[1].parse::<f64>()?;
-                Ok(Margin::VerticalHorizontal(v, h))
+                Ok(Self {
+                    top: v,
+                    right: h,
+                    bottom: v,
+                    left: h,
+                })
             }
-            4 => {
-                let top = values[0].parse::<f64>()?;
-                let right = values[1].parse::<f64>()?;
-                let bottom = values[2].parse::<f64>()?;
-                let left = values[3].parse::<f64>()?;
-                Ok(Margin::TopRightBottomLeft(top, right, bottom, left))
-            }
+            4 => Ok(Self {
+                top: values[0].parse::<f64>()?,
+                right: values[1].parse::<f64>()?,
+                bottom: values[2].parse::<f64>()?,
+                left: values[3].parse::<f64>()?,
+            }),
             _ => Err(Error::InvalidMarginDefinition {
                 margin: s.to_string(),
             }),
@@ -378,7 +267,9 @@ mod tests {
     #[case::legal("Legal", PaperSize::Legal)]
     #[case::tabloid("Tabloid", PaperSize::Tabloid)]
     fn should_parse_valid_paper_size(#[case] value: &str, #[case] expected: PaperSize) {
-        let result = value.parse::<PaperSize>().unwrap();
+        let result = value
+            .parse::<PaperSize>()
+            .expect("should parse valid paper size");
         check!(result == expected);
     }
 
@@ -391,31 +282,31 @@ mod tests {
 
     #[test]
     fn should_parse_valid_margin_all() {
-        let value = "0.4";
-        let result = value.parse::<Margin>();
-        check!(let Ok(Margin::All(_)) = result);
+        let m = "0.4".parse::<Margin>().expect("should parse margin");
+        check!(m.top == 0.4);
+        check!(m.right == 0.4);
+        check!(m.bottom == 0.4);
+        check!(m.left == 0.4);
     }
 
     #[test]
     fn should_parse_valid_margin_vh() {
-        let value = "0.4  0.7";
-        let result = value.parse::<Margin>();
-        check!(let Ok(Margin::VerticalHorizontal(_, _)) = result);
+        let m = "0.4  0.7".parse::<Margin>().expect("should parse margin");
+        check!(m.top == 0.4);
+        check!(m.bottom == 0.4);
+        check!(m.right == 0.7);
+        check!(m.left == 0.7);
     }
 
     #[test]
     fn should_parse_valid_margin_trbl() {
-        let value = "0.2   0.3 0.4  0.5";
-        let result = value.parse::<Margin>();
-        let Margin::TopRightBottomLeft(top, right, bottom, left) =
-            result.expect("should parse margin")
-        else {
-            panic!("expected TopRightBottomLeft variant");
-        };
-        check!(top == 0.2);
-        check!(right == 0.3);
-        check!(bottom == 0.4);
-        check!(left == 0.5);
+        let m = "0.2   0.3 0.4  0.5"
+            .parse::<Margin>()
+            .expect("should parse margin");
+        check!(m.top == 0.2);
+        check!(m.right == 0.3);
+        check!(m.bottom == 0.4);
+        check!(m.left == 0.5);
     }
 
     #[test]

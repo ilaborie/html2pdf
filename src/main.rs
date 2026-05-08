@@ -8,7 +8,6 @@ fn main() -> Result<(), Error> {
     let options = Options::parse();
     debug!(?options, "Parsed arguments");
 
-    // Let's go
     run(&options)
 }
 
