@@ -361,7 +361,7 @@ impl FromStr for Margin {
 
 #[cfg(test)]
 mod tests {
-    use assert2::{check, let_assert};
+    use assert2::check;
     use rstest::rstest;
 
     use super::*;
@@ -386,28 +386,32 @@ mod tests {
     fn should_reject_invalid_paper_size() {
         let value = "plop";
         let result = value.parse::<PaperSize>();
-        let_assert!(Err(Error::InvalidPaperSize { .. }) = result);
+        check!(let Err(Error::InvalidPaperSize { .. }) = result);
     }
 
     #[test]
     fn should_parse_valid_margin_all() {
         let value = "0.4";
         let result = value.parse::<Margin>();
-        let_assert!(Ok(Margin::All(_)) = result);
+        check!(let Ok(Margin::All(_)) = result);
     }
 
     #[test]
     fn should_parse_valid_margin_vh() {
         let value = "0.4  0.7";
         let result = value.parse::<Margin>();
-        let_assert!(Ok(Margin::VerticalHorizontal(_, _)) = result);
+        check!(let Ok(Margin::VerticalHorizontal(_, _)) = result);
     }
 
     #[test]
     fn should_parse_valid_margin_trbl() {
         let value = "0.2   0.3 0.4  0.5";
         let result = value.parse::<Margin>();
-        let_assert!(Ok(Margin::TopRightBottomLeft(top, right, bottom, left)) = result);
+        let Margin::TopRightBottomLeft(top, right, bottom, left) =
+            result.expect("should parse margin")
+        else {
+            panic!("expected TopRightBottomLeft variant");
+        };
         check!(top == 0.2);
         check!(right == 0.3);
         check!(bottom == 0.4);
@@ -418,13 +422,13 @@ mod tests {
     fn should_reject_invalid_margin() {
         let value = "0.2    0.3  0.4";
         let result = value.parse::<Margin>();
-        let_assert!(Err(Error::InvalidMarginDefinition { .. }) = result);
+        check!(let Err(Error::InvalidMarginDefinition { .. }) = result);
     }
 
     #[test]
     fn should_reject_invalid_margin_value() {
         let value = "plop";
         let result = value.parse::<Margin>();
-        let_assert!(Err(Error::InvalidMarginValue(_)) = result);
+        check!(let Err(Error::InvalidMarginValue(_)) = result);
     }
 }

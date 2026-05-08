@@ -14,7 +14,7 @@ categories = ["command-line-utilities", "encoding"]
 [dependencies]
 anyhow = "1.0.93"
 clap = { version = "4.5.21", features = ["derive"] }
-derive_more = { version = "1.0.0", features = ["from", "error", "display"] }
+derive_more = { version = "2.1.1", features = ["from", "error", "display"] }
 dunce = "1.0.5"
 headless_chrome = "1.0.16"
 humantime = "2.1.0"
@@ -22,8 +22,8 @@ tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter", "fmt"] }
 
 [dev-dependencies]
-assert2 = "0.3.15"
-rstest = "0.24.0"
+assert2 = "0.4.0"
+rstest = "0.26.1"
 
 # The profile that 'dist' will build with
 [profile.dist]
