@@ -348,7 +348,7 @@ impl FromStr for Margin {
                 let top = values[0].parse::<f64>()?;
                 let right = values[1].parse::<f64>()?;
                 let bottom = values[2].parse::<f64>()?;
-                let left = values[2].parse::<f64>()?;
+                let left = values[3].parse::<f64>()?;
                 Ok(Margin::TopRightBottomLeft(top, right, bottom, left))
             }
             _ => Err(Error::InvalidMarginDefinition {
@@ -406,7 +406,11 @@ mod tests {
     fn should_parse_valid_margin_trbl() {
         let value = "0.2   0.3 0.4  0.5";
         let result = value.parse::<Margin>();
-        let_assert!(Ok(Margin::TopRightBottomLeft(_, _, _, _)) = result);
+        let_assert!(Ok(Margin::TopRightBottomLeft(top, right, bottom, left)) = result);
+        check!(top == 0.2);
+        check!(right == 0.3);
+        check!(bottom == 0.4);
+        check!(left == 0.5);
     }
 
     #[test]
