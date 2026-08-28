@@ -30,36 +30,73 @@ RUST_LOG="none" html2pdf path/to/file.html
 Just run `html2pdf --help` :
 
 ```shell
-html2pdf 0.4.0
 Generate a PDF from a local HTML file using a headless chrome
 
-USAGE:
-    html2pdf [FLAGS] [OPTIONS] <input>
+Usage: html2pdf [OPTIONS] <INPUT>
 
-FLAGS:
-        --background       Allow print background
-    -h, --help             Prints help information
-        --landscape        Use landscape mode
-        --disable-sandbox  Disable Chrome sandbox. Not recommended, unless running on docker
+Arguments:
+  <INPUT>  Input HTML file
 
-    -V, --version          Prints version information
-
-OPTIONS:
-        --footer <footer>  HTML template for the print footer. Should use the same format as the headerTemplate
-        --header <header>  HTML template for the print header. Should be valid HTML markup with following classes used
-                           to inject printing values into them: date for formatted print date, title for document
-                           title, url for document location, pageNumber for current page number, totalPages for total
-                           pages in the document. For example, `<span class=title></span>` would generate span
-                           containing the title
-        --margin <margin>  Margin in inches You can define margin like this: '0.4' the value is applied for all side,
-                                  '0.4 0.4' : first value is applied for top and bottom, second for left and right, '0.4 0.4
-                                  0.4 0.4' : first value is applied for top then, right, then bottom, and last for left
-    -o, --output <output>  Output file. By default, just change the input extension to PDF
-        --paper <paper>    Paper size. Supported values: A4, Letter, A3, Tabloid, A2, A1, A0, A5, A6
-        --range <range>    Paper ranges to print, e.g. '1-5, 8, 11-13'
-        --scale <scale>    Scale, default to 1.0
-        --wait <wait>      Time to wait in ms before printing. Examples: 150ms, 10s
-
-ARGS:
-    <input>    Input HTML file
+Options:
+  -o, --output <OUTPUT>      Output file. By default, just change the input extension to PDF
+      --landscape            Use landscape mode
+      --background           Allow print background
+      --wait <WAIT>          Time to wait in ms before printing. Examples: 150ms, 10s
+      --wait-for <WAIT_FOR>  When to consider the page ready for printing. Supported values:
+                             navigation, load, network-idle [default: navigation]
+      --header <HEADER>      HTML template for the print header
+      --footer <FOOTER>      HTML template for the print footer
+      --paper <PAPER>        Paper size. Supported values: A4, Letter, Legal, A3, Tabloid, A2, A1,
+                             A0, A5, A6
+      --scale <SCALE>        Scale, default to 1.0
+      --range <RANGE>        Paper ranges to print, e.g. '1-5, 8, 11-13'
+      --margin <MARGIN>      Margin in inches. '0.4' applies to all sides, '0.4 0.4' is
+                             top/bottom then left/right, '0.4 0.4 0.4 0.4' is top, right,
+                             bottom, left
+      --disable-sandbox      Disable Chrome sandbox. Not recommended, unless running on docker
+  -h, --help                 Print help
+  -V, --version              Print version
 ```
+
+### Waiting for the page to be ready
+
+By default the PDF is printed as soon as navigation completes. When the page pulls in web fonts,
+images or data, that can be too early. `--wait-for` waits for a browser lifecycle milestone
+instead:
+
+| Value | Waits until |
+|---|---|
+| `navigation` | navigation completes (default, the historical behaviour) |
+| `load` | the `load` event, i.e. sub-resources have been fetched |
+| `network-idle` | the network has gone quiet, i.e. fonts, images and XHR have settled |
+
+If the milestone is never reached (a page that polls forever, say), `html2pdf` warns and prints
+anyway rather than hanging. `--wait` is still available and applies *after* `--wait-for` settles.
+
+## Library
+
+`html2pdf` is also a library. The API is async and runs on [tokio]:
+
+```rust,no_run
+use html2pdf::{html_to_pdf, BrowserOptions, PaperSize, PdfOptions, WaitFor};
+
+#[tokio::main]
+async fn main() -> Result<(), html2pdf::Error> {
+    html_to_pdf(
+        "input.html",
+        "output.pdf",
+        PdfOptions {
+            paper: Some(PaperSize::A4),
+            print_background: true,
+            ..PdfOptions::default()
+        },
+        BrowserOptions {
+            wait_for: WaitFor::NetworkIdle,
+            ..BrowserOptions::default()
+        },
+    )
+    .await
+}
+```
+
+[tokio]: https://tokio.rs

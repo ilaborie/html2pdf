@@ -6,20 +6,17 @@
 #![allow(clippy::module_name_repetitions)]
 #![doc = include_str!("../README.md")]
 
+use std::error::Error as StdError;
 use std::fmt::Debug;
 use std::io::ErrorKind;
 use std::num::ParseFloatError;
 use std::path::Path;
-use std::thread::sleep;
-use std::time::Duration;
 use std::{fs, io};
 
-use anyhow::Result;
-use headless_chrome::types::PrintToPdfOptions;
-use headless_chrome::{Browser, LaunchOptions};
-use tracing::{debug, info};
+use tracing::info;
 
 mod cli;
+mod render;
 
 pub use cli::*;
 
@@ -48,20 +45,42 @@ pub enum Error {
     #[display("Invalid margin value: {_0}")]
     InvalidMarginValue(ParseFloatError),
 
-    /// Headless chrome issue
-    #[display("Oops, an error occurs with headless chrome: {_0}")]
-    HeadlessChromeError(anyhow::Error),
+    /// Invalid page-ready milestone
+    #[display("Invalid wait-for value {value}, expected one of navigation, load, network-idle")]
+    #[from(ignore)]
+    InvalidWaitFor {
+        /// The invalid value
+        value: String,
+    },
+
+    /// Headless browser issue
+    ///
+    /// The underlying cause is kept boxed on purpose, so the browser crate stays an
+    /// implementation detail rather than part of this crate's public API.
+    #[display("Oops, an error occurs with the headless browser: {_0}")]
+    #[from(ignore)]
+    Browser(Box<dyn StdError + Send + Sync>),
 
     /// I/O issue
     IoError(io::Error),
 }
 
-/// Run HTML to PDF with `headless_chrome`
+impl Error {
+    /// Wrap any browser-backend failure into [`Error::Browser`].
+    pub(crate) fn browser<E>(err: E) -> Self
+    where
+        E: Into<Box<dyn StdError + Send + Sync>>,
+    {
+        Self::Browser(err.into())
+    }
+}
+
+/// Run HTML to PDF with a headless browser
 ///
 /// # Errors
 ///
 /// Could fail if there is I/O or Chrome headless issue
-pub fn run(opt: &Options) -> Result<(), Error> {
+pub async fn run(opt: &Options) -> Result<(), Error> {
     let input = dunce::canonicalize(&opt.input)?;
     let output = opt.output.clone().unwrap_or_else(|| {
         let mut path = opt.input.clone();
@@ -69,22 +88,19 @@ pub fn run(opt: &Options) -> Result<(), Error> {
         path
     });
 
-    html_to_pdf(input, output, opt.into(), opt.into(), opt.wait)?;
-
-    Ok(())
+    html_to_pdf(input, output, opt.into(), opt.into()).await
 }
 
-/// Run HTML to PDF with `headless_chrome`
+/// Run HTML to PDF with a headless browser
 ///
 /// # Errors
 ///
 /// Could fail if there is I/O or Chrome headless issue
-pub fn html_to_pdf<I, O>(
+pub async fn html_to_pdf<I, O>(
     input: I,
     output: O,
-    pdf_options: PrintToPdfOptions,
-    launch_options: LaunchOptions,
-    wait: Option<Duration>,
+    pdf_options: PdfOptions,
+    browser_options: BrowserOptions,
 ) -> Result<(), Error>
 where
     I: AsRef<Path> + Debug,
@@ -98,31 +114,10 @@ where
     let input = format!("file://{os}");
     info!(%input, "Input file");
 
-    let local_pdf = print_to_pdf(&input, pdf_options, launch_options, wait)?;
+    let local_pdf = render::print_to_pdf(&input, &pdf_options, &browser_options).await?;
 
     info!(?output, "Output file");
     fs::write(output.as_ref(), local_pdf)?;
 
     Ok(())
-}
-
-fn print_to_pdf(
-    file_path: &str,
-    pdf_options: PrintToPdfOptions,
-    launch_options: LaunchOptions,
-    wait: Option<Duration>,
-) -> Result<Vec<u8>> {
-    let browser = Browser::new(launch_options)?;
-    let tab = browser.new_tab()?;
-    let tab = tab.navigate_to(file_path)?.wait_until_navigated()?;
-
-    if let Some(wait) = wait {
-        info!(?wait, "Waiting before export to PDF");
-        sleep(wait);
-    }
-
-    debug!(?pdf_options, "Using PDF options");
-    let bytes = tab.print_to_pdf(Some(pdf_options))?;
-
-    Ok(bytes)
 }

@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>never idle</title>
+  </head>
+  <body>
+    <h1>Never idle</h1>
+    <p>This page keeps a request in flight forever, so `networkIdle` never fires.</p>
+    <script>
+      // A request that never settles keeps the network busy indefinitely.
+      setInterval(() => {
+        fetch("http://127.0.0.1:1/never").catch(() => {});
+      }, 100);
+    </script>
+  </body>
+</html>

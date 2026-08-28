@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>html2pdf fixture</title>
+    <style>
+      body { font-family: Georgia, serif; margin: 2rem; }
+      h1 { color: #2b6cb0; }
+      .box { background: #edf2f7; border: 2px solid #2b6cb0; padding: 1rem; }
+      .page-break { page-break-before: always; }
+      img { width: 120px; height: 120px; }
+    </style>
+  </head>
+  <body>
+    <h1>html2pdf fixture</h1>
+    <p>A deterministic fixture used for baseline and end-to-end rendering checks.</p>
+    <div class="box">Background colour, exercised by <code>--background</code>.</div>
+    <!-- inline SVG data URI: an image that must actually decode, with no network -->
+    <img alt="square"
+         src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzJiNmNiMCIvPjwvc3ZnPg==" />
+    <div class="page-break"></div>
+    <h2>Second page</h2>
+    <p>Present so page-count regressions are visible.</p>
+  </body>
+</html>
