@@ -2,6 +2,7 @@
 name = "html2pdf"
 version = "0.8.3"
 edition = "2021"
+rust-version = "1.85"
 authors = ["Igor Laborie <ilaborie@gmail.com>"]
 description = "Convert HTML to PDF using a Headless Chrome browser"
 license = "Apache-2.0 OR MIT"
