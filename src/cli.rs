@@ -3,8 +3,6 @@ use std::str::FromStr;
 use std::time::Duration;
 
 use clap::Parser;
-use headless_chrome::types::PrintToPdfOptions;
-use headless_chrome::LaunchOptions;
 use humantime::parse_duration;
 
 use crate::Error;
@@ -33,6 +31,11 @@ pub struct Options {
     /// Examples: 150ms, 10s
     #[clap(long, value_parser = parse_duration)]
     pub wait: Option<Duration>,
+
+    /// When to consider the page ready for printing.
+    /// Supported values: navigation, load, network-idle
+    #[clap(long, default_value = "navigation")]
+    pub wait_for: WaitFor,
 
     /// HTML template for the print header.
     /// Should be valid HTML markup with following classes used to inject printing values into
@@ -79,37 +82,115 @@ pub struct Options {
     pub disable_sandbox: bool,
 }
 
-impl From<&Options> for PrintToPdfOptions {
+impl From<&Options> for PdfOptions {
     fn from(opt: &Options) -> Self {
-        PrintToPdfOptions {
-            landscape: Some(opt.landscape),
-            display_header_footer: Some(opt.header.is_some() || opt.footer.is_some()),
-            print_background: Some(opt.background),
+        Self {
+            landscape: opt.landscape,
+            print_background: opt.background,
             scale: opt.scale,
-            paper_width: opt.paper.map(|p| p.dimensions().0),
-            paper_height: opt.paper.map(|p| p.dimensions().1),
-            margin_top: opt.margin.as_ref().map(|m| m.top),
-            margin_bottom: opt.margin.as_ref().map(|m| m.bottom),
-            margin_left: opt.margin.as_ref().map(|m| m.left),
-            margin_right: opt.margin.as_ref().map(|m| m.right),
+            paper: opt.paper,
+            margin: opt.margin.clone(),
             page_ranges: opt.range.clone(),
             header_template: opt.header.clone(),
             footer_template: opt.footer.clone(),
-            ..Default::default()
         }
     }
 }
 
-impl From<&Options> for LaunchOptions<'_> {
+impl From<&Options> for BrowserOptions {
     fn from(opt: &Options) -> Self {
-        LaunchOptions {
-            sandbox: !opt.disable_sandbox,
-            idle_browser_timeout: opt.wait.unwrap_or_default().max(Duration::from_secs(30)),
-            ..Default::default()
+        Self {
+            disable_sandbox: opt.disable_sandbox,
+            wait_for: opt.wait_for,
+            wait: opt.wait,
         }
     }
 }
 
+/// PDF printing options, independent of the browser backend.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct PdfOptions {
+    /// Use landscape mode.
+    pub landscape: bool,
+
+    /// Print background graphics.
+    pub print_background: bool,
+
+    /// Scale of the page rendering, defaults to 1.0.
+    pub scale: Option<f64>,
+
+    /// Paper size. When unset, the browser default (Letter) applies.
+    pub paper: Option<PaperSize>,
+
+    /// Margins in inches. When unset, the browser default (~0.4in) applies.
+    pub margin: Option<Margin>,
+
+    /// Paper ranges to print, e.g. `1-5, 8, 11-13`.
+    pub page_ranges: Option<String>,
+
+    /// HTML template for the print header.
+    pub header_template: Option<String>,
+
+    /// HTML template for the print footer.
+    pub footer_template: Option<String>,
+}
+
+impl PdfOptions {
+    /// Whether the header/footer band should be rendered at all.
+    ///
+    /// Chrome only honours the header and footer templates when this is set, so it is derived
+    /// rather than exposed: it is on exactly when at least one template is provided.
+    #[must_use]
+    pub fn display_header_footer(&self) -> bool {
+        self.header_template.is_some() || self.footer_template.is_some()
+    }
+}
+
+/// How the browser is launched, and when the page is considered ready to print.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct BrowserOptions {
+    /// Disable the Chrome sandbox.
+    /// Not recommended, unless running on docker.
+    pub disable_sandbox: bool,
+
+    /// The page lifecycle milestone to wait for before printing.
+    pub wait_for: WaitFor,
+
+    /// An extra fixed delay applied *after* `wait_for` has settled.
+    pub wait: Option<Duration>,
+}
+
+/// When to consider the page ready for printing.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, derive_more::Display)]
+pub enum WaitFor {
+    /// Print as soon as navigation completes.
+    #[default]
+    #[display("navigation")]
+    Navigation,
+
+    /// Wait for the `load` lifecycle event, i.e. sub-resources have been fetched.
+    #[display("load")]
+    Load,
+
+    /// Wait for the `networkIdle` lifecycle event, i.e. web fonts, images and XHR have settled.
+    #[display("network-idle")]
+    NetworkIdle,
+}
+
+impl FromStr for WaitFor {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_ascii_lowercase().as_str() {
+            "navigation" => Ok(Self::Navigation),
+            "load" => Ok(Self::Load),
+            "network-idle" | "networkidle" => Ok(Self::NetworkIdle),
+            _ => Err(Error::InvalidWaitFor {
+                value: s.to_string(),
+            }),
+        }
+    }
+}
 /// Paper size
 #[derive(Debug, Clone, Copy, PartialEq, Eq, derive_more::Display)]
 pub enum PaperSize {
@@ -314,6 +395,127 @@ mod tests {
         let value = "0.2    0.3  0.4";
         let result = value.parse::<Margin>();
         check!(let Err(Error::InvalidMarginDefinition { .. }) = result);
+    }
+
+    #[rstest]
+    #[case::navigation("navigation", WaitFor::Navigation)]
+    #[case::navigation_mixed_case("Navigation", WaitFor::Navigation)]
+    #[case::load("load", WaitFor::Load)]
+    #[case::network_idle("network-idle", WaitFor::NetworkIdle)]
+    #[case::network_idle_mixed_case("Network-Idle", WaitFor::NetworkIdle)]
+    #[case::network_idle_compact("networkidle", WaitFor::NetworkIdle)]
+    fn should_parse_valid_wait_for(#[case] value: &str, #[case] expected: WaitFor) {
+        let result = value
+            .parse::<WaitFor>()
+            .expect("should parse valid wait-for");
+        check!(result == expected);
+    }
+
+    #[test]
+    fn should_reject_invalid_wait_for() {
+        let value = "plop";
+        let result = value.parse::<WaitFor>();
+        check!(let Err(Error::InvalidWaitFor { .. }) = result);
+    }
+
+    /// `WaitFor` round-trips through its `Display`, so the clap `default_value` string and the
+    /// `FromStr` arms cannot drift apart.
+    #[rstest]
+    #[case::navigation(WaitFor::Navigation)]
+    #[case::load(WaitFor::Load)]
+    #[case::network_idle(WaitFor::NetworkIdle)]
+    fn should_round_trip_wait_for(#[case] wait_for: WaitFor) {
+        let rendered = wait_for.to_string();
+        let parsed = rendered.parse::<WaitFor>().expect("should re-parse");
+        check!(parsed == wait_for);
+    }
+
+    fn options(input: &str) -> Options {
+        Options::try_parse_from(["html2pdf", input]).expect("should parse minimal args")
+    }
+
+    #[test]
+    fn should_default_wait_for_to_navigation() {
+        let opt = options("a.html");
+        check!(opt.wait_for == WaitFor::Navigation);
+    }
+
+    #[test]
+    fn should_map_options_to_pdf_options() {
+        let opt = Options::try_parse_from([
+            "html2pdf",
+            "a.html",
+            "--landscape",
+            "--background",
+            "--paper",
+            "A4",
+            "--scale",
+            "1.5",
+            "--range",
+            "1-2",
+            "--margin",
+            "0.4",
+            "--header",
+            "<span class=title></span>",
+        ])
+        .expect("should parse args");
+
+        let pdf = PdfOptions::from(&opt);
+        check!(pdf.landscape == true);
+        check!(pdf.print_background == true);
+        check!(pdf.scale == Some(1.5));
+        check!(pdf.paper == Some(PaperSize::A4));
+        check!(pdf.page_ranges == Some(String::from("1-2")));
+        check!(pdf.header_template == Some(String::from("<span class=title></span>")));
+        check!(pdf.footer_template == None);
+        check!(pdf.margin.as_ref().map(|m| m.top) == Some(0.4));
+    }
+
+    /// Chrome ignores the header/footer templates unless `displayHeaderFooter` is set, so this is
+    /// derived from them rather than being separately settable.
+    #[rstest]
+    #[case::neither(None, None, false)]
+    #[case::header_only(Some("h"), None, true)]
+    #[case::footer_only(None, Some("f"), true)]
+    #[case::both(Some("h"), Some("f"), true)]
+    fn should_display_header_footer_iff_a_template_is_set(
+        #[case] header: Option<&str>,
+        #[case] footer: Option<&str>,
+        #[case] expected: bool,
+    ) {
+        let pdf = PdfOptions {
+            header_template: header.map(String::from),
+            footer_template: footer.map(String::from),
+            ..PdfOptions::default()
+        };
+        check!(pdf.display_header_footer() == expected);
+    }
+
+    #[test]
+    fn should_map_options_to_browser_options() {
+        let opt = Options::try_parse_from([
+            "html2pdf",
+            "a.html",
+            "--disable-sandbox",
+            "--wait",
+            "2s",
+            "--wait-for",
+            "network-idle",
+        ])
+        .expect("should parse args");
+
+        let browser = BrowserOptions::from(&opt);
+        check!(browser.disable_sandbox == true);
+        check!(browser.wait == Some(Duration::from_secs(2)));
+        check!(browser.wait_for == WaitFor::NetworkIdle);
+    }
+
+    /// The sandbox must stay ON by default: `BrowserOptions::default()` is the safe configuration.
+    #[test]
+    fn should_keep_sandbox_enabled_by_default() {
+        let browser = BrowserOptions::from(&options("a.html"));
+        check!(browser.disable_sandbox == false);
+        check!(BrowserOptions::default().disable_sandbox == false);
     }
 
     #[test]

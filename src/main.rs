@@ -2,13 +2,14 @@ use clap::Parser;
 use html2pdf::{run, Error, Options};
 use tracing::debug;
 
-fn main() -> Result<(), Error> {
+#[tokio::main]
+async fn main() -> Result<(), Error> {
     init_tracing();
 
     let options = Options::parse();
     debug!(?options, "Parsed arguments");
 
-    run(&options)
+    run(&options).await
 }
 
 fn init_tracing() {

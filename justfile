@@ -27,6 +27,11 @@ test:
     cargo nextest run
     cargo test --doc
 
+# Launch the end-to-end tests (requires a local Chrome/Chromium)
+test-e2e:
+    @echo "🌍 Testing end-to-end..."
+    cargo nextest run --run-ignored all
+
 # Format the code
 format:
     cargo +nightly fmt
