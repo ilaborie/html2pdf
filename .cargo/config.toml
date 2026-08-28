@@ -1,0 +1,8 @@
+# Keep dependency resolution within the MSRV declared in Cargo.toml (`rust-version`).
+#
+# Without this, `cargo update` — including the one release-plz runs via
+# `dependencies_update` — pulls in transitive crates that require a newer rustc
+# (notably the `icu_*` crates reached through `url`), which silently breaks the
+# MSRV we advertise.
+[resolver]
+incompatible-rust-versions = "fallback"
