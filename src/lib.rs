@@ -25,7 +25,7 @@ pub use cli::*;
 pub enum Error {
     /// Invalid paper size
     #[display(
-        "Invalid paper size {size}, expected a value in A4, Letter, A3, Tabloid, A2, A1, A0, A5, A6"
+        "Invalid paper size {size}, expected a value in A4, Letter, Legal, A3, Tabloid, A2, A1, A0, A5, A6"
     )]
     #[from(ignore)]
     InvalidPaperSize {
