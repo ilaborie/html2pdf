@@ -55,7 +55,7 @@ pub struct Options {
     pub footer: Option<String>,
 
     /// Paper size.
-    /// Supported values: A4, Letter, A3, Tabloid, A2, A1, A0, A5, A6
+    /// Supported values: A4, Letter, Legal, A3, Tabloid, A2, A1, A0, A5, A6
     #[clap(long)]
     pub paper: Option<PaperSize>,
 
@@ -215,13 +215,13 @@ pub enum PaperSize {
     /// A6 (10.5cm × 14.8cm)
     A6,
 
-    /// US Letter (11.0in × 8.5in)
+    /// US Letter (8.5in × 11in)
     Letter,
 
-    /// Legal (17in × 8.5in)
+    /// Legal (8.5in × 14in)
     Legal,
 
-    /// Tabloid (17in × 11in)
+    /// Tabloid (11in × 17in)
     Tabloid,
 }
 
@@ -238,7 +238,7 @@ impl PaperSize {
             Self::A5 => (5.83, 8.27),
             Self::A6 => (4.13, 5.83),
             Self::Letter => (8.5, 11.0),
-            Self::Legal => (8.5, 17.0),
+            Self::Legal => (8.5, 14.0),
             Self::Tabloid => (11.0, 17.0),
         }
     }
@@ -352,6 +352,17 @@ mod tests {
             .parse::<PaperSize>()
             .expect("should parse valid paper size");
         check!(result == expected);
+    }
+
+    #[rstest]
+    #[case::letter(PaperSize::Letter, (8.5, 11.0))]
+    #[case::legal(PaperSize::Legal, (8.5, 14.0))]
+    #[case::tabloid(PaperSize::Tabloid, (11.0, 17.0))]
+    fn should_return_width_then_height_in_inches(
+        #[case] paper_size: PaperSize,
+        #[case] expected: (f64, f64),
+    ) {
+        check!(paper_size.dimensions() == expected);
     }
 
     #[test]
