@@ -27,8 +27,8 @@ pub struct Options {
     #[clap(long)]
     pub background: bool,
 
-    /// Time to wait in ms before printing.
-    /// Examples: 150ms, 10s
+    /// Time to wait before printing.
+    /// Examples: 150ms, 10s, 1m 30s
     #[clap(long, value_parser = parse_wait)]
     pub wait: Option<Duration>,
 
@@ -164,9 +164,8 @@ pub struct BrowserOptions {
 fn parse_wait(value: &str) -> Result<Duration, String> {
     let duration = value
         .parse::<SignedDuration>()
-        .map_err(|err| format!("invalid duration {value:?}: {err}"))?;
-    Duration::try_from(duration)
-        .map_err(|_| format!("duration must not be negative, got {value:?}"))
+        .map_err(|err| err.to_string())?;
+    Duration::try_from(duration).map_err(|_| "duration must not be negative".to_owned())
 }
 
 /// When to consider the page ready for printing.
@@ -340,7 +339,7 @@ impl FromStr for Margin {
 
 #[cfg(test)]
 mod tests {
-    use assert2::check;
+    use assert2::{check, let_assert};
     use rstest::rstest;
 
     use super::*;
@@ -460,9 +459,15 @@ mod tests {
         check!(result == expected);
     }
 
+    #[test]
+    fn should_reject_negative_wait() {
+        let_assert!(Err(message) = parse_wait("-2s"));
+        check!(message == "duration must not be negative");
+    }
+
     #[rstest]
-    #[case::negative("-2s")]
     #[case::missing_unit("150")]
+    #[case::day_unit("1d")]
     #[case::garbage("plop")]
     fn should_reject_invalid_wait(#[case] value: &str) {
         check!(parse_wait(value).is_err());

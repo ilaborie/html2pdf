@@ -41,7 +41,7 @@ Options:
   -o, --output <OUTPUT>      Output file. By default, just change the input extension to PDF
       --landscape            Use landscape mode
       --background           Allow print background
-      --wait <WAIT>          Time to wait in ms before printing. Examples: 150ms, 10s
+      --wait <WAIT>          Time to wait before printing. Examples: 150ms, 10s, 1m 30s
       --wait-for <WAIT_FOR>  When to consider the page ready for printing. Supported values:
                              navigation, load, network-idle [default: navigation]
       --header <HEADER>      HTML template for the print header
