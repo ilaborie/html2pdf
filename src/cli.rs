@@ -3,7 +3,7 @@ use std::str::FromStr;
 use std::time::Duration;
 
 use clap::Parser;
-use humantime::parse_duration;
+use jiff::SignedDuration;
 
 use crate::Error;
 
@@ -27,9 +27,9 @@ pub struct Options {
     #[clap(long)]
     pub background: bool,
 
-    /// Time to wait in ms before printing.
-    /// Examples: 150ms, 10s
-    #[clap(long, value_parser = parse_duration)]
+    /// Time to wait before printing.
+    /// Examples: 150ms, 10s, 1m 30s
+    #[clap(long, value_parser = parse_wait)]
     pub wait: Option<Duration>,
 
     /// When to consider the page ready for printing.
@@ -158,6 +158,14 @@ pub struct BrowserOptions {
 
     /// An extra fixed delay applied *after* `wait_for` has settled.
     pub wait: Option<Duration>,
+}
+
+/// Parse a human-friendly, non-negative duration such as `150ms`, `10s` or `1m 30s`.
+fn parse_wait(value: &str) -> Result<Duration, String> {
+    let duration = value
+        .parse::<SignedDuration>()
+        .map_err(|err| err.to_string())?;
+    Duration::try_from(duration).map_err(|_| "duration must not be negative".to_owned())
 }
 
 /// When to consider the page ready for printing.
@@ -331,7 +339,7 @@ impl FromStr for Margin {
 
 #[cfg(test)]
 mod tests {
-    use assert2::check;
+    use assert2::{check, let_assert};
     use rstest::rstest;
 
     use super::*;
@@ -439,6 +447,30 @@ mod tests {
         let rendered = wait_for.to_string();
         let parsed = rendered.parse::<WaitFor>().expect("should re-parse");
         check!(parsed == wait_for);
+    }
+
+    #[rstest]
+    #[case::millis("150ms", Duration::from_millis(150))]
+    #[case::seconds("10s", Duration::from_secs(10))]
+    #[case::compound("1m 30s", Duration::from_secs(90))]
+    #[case::zero("0s", Duration::ZERO)]
+    fn should_parse_valid_wait(#[case] value: &str, #[case] expected: Duration) {
+        let result = parse_wait(value).expect("should parse valid wait");
+        check!(result == expected);
+    }
+
+    #[test]
+    fn should_reject_negative_wait() {
+        let_assert!(Err(message) = parse_wait("-2s"));
+        check!(message == "duration must not be negative");
+    }
+
+    #[rstest]
+    #[case::missing_unit("150")]
+    #[case::day_unit("1d")]
+    #[case::garbage("plop")]
+    fn should_reject_invalid_wait(#[case] value: &str) {
+        check!(parse_wait(value).is_err());
     }
 
     fn options(input: &str) -> Options {
