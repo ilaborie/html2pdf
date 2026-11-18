@@ -18,7 +18,7 @@ clap = { version = "4.6.6", features = ["derive"] }
 derive_more = { version = "2.1.1", features = ["from", "error", "display"] }
 dunce = "1.0.5"
 futures = "0.3.34"
-humantime = "2.4.0"
+jiff = { version = "1.0.1", default-features = false, features = ["std"] }
 tempfile = "3.27.0"
 tokio = { version = "1.53.1", features = ["macros", "rt-multi-thread", "time"] }
 tracing = "0.1.44"
