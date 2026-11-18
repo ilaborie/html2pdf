@@ -20,7 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.9.2] - 2026-11-18
+## [0.10.0] - 2026-11-18
+
+### Breaking Changes
+
+- `--wait` is now parsed with `jiff`. It no longer accepts units of a day or more (`1d`, `1w`, `1month`, `1y`), leading whitespace, or repeated / out-of-order units (`1s 1s`). Negative durations are rejected.
 
 ### Miscellaneous Tasks
 
