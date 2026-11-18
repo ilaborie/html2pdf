@@ -19,3 +19,7 @@ install-path = "CARGO_HOME"
 publish-jobs = ["homebrew"]
 # Whether to install an updater program
 install-updater = false
+
+[dist.github-custom-runners]
+# GitHub no longer supports the macos-14 image that dist 0.31 picks by default
+aarch64-apple-darwin = "macos-15"
